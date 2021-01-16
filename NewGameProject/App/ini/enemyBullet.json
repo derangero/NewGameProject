@@ -1,0 +1,11 @@
+[
+{
+	"type": 1,
+	"damage": 1,
+	"velocity": 150.00,
+	"range": 100.00,
+	"hitBox_w": 16,
+	"hitBox_h": 16,
+	"generationCount": 1
+}
+]
