@@ -21,18 +21,18 @@ public:
 		for (const auto jo : json.objectView()) {
 			int maxImageNumber = jo.value[U"maxImageNumber"].get<int>();
 			double interval = Parse<double>(jo.value[U"interval"].getString());
-			
+			double coolTime = Parse<double>(jo.value[U"coolTime"].getString());
 			int status = !isPlayer ? jo.value[U"status"].get<int>() : 0;
 
 			Array<Vec2> imageVecs;
 			Array<Size> imageSizes;
 			for (const auto imageVec : jo.value[U"vecs"].arrayView()) {
 				imageVecs << imageVec.get<Vec2>();
-			};
+			}
 			for (const auto imageSize : jo.value[U"sizes"].arrayView()) {
 				imageSizes << imageSize.get<Size>();
-			};
-			spriteImageMetaData[isPlayer ? index : status] = SpriteImageMetaData(maxImageNumber, interval, imageVecs, imageSizes);
+			}
+			spriteImageMetaData[isPlayer ? index : status] = SpriteImageMetaData(maxImageNumber, interval, coolTime, imageVecs, imageSizes);
 			index++;
 		}
 		return spriteImageMetaData;

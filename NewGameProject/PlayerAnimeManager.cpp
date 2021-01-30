@@ -6,6 +6,10 @@ PlayerAnimeManager::PlayerAnimeManager() : standNumber(0), jumpNumber(0), runNum
 
 void PlayerAnimeManager::Draw(Player& player, TimeManager& _timeManager, Effect &effect)
 {
+    if (!player.isExists) {
+        Down(player, timeManager);
+        return;
+    }
     BulletMotion(player, timeManager);
     Jump(player, timeManager, effect);
     Dash(player, timeManager);
@@ -14,7 +18,6 @@ void PlayerAnimeManager::Draw(Player& player, TimeManager& _timeManager, Effect 
     Crouch(player, timeManager);
     GrabLadder(player, timeManager);
     OnDamage(player, timeManager);
- 
     player.flag = !player.flag; //点滅用
 }
 
@@ -35,8 +38,21 @@ void PlayerAnimeManager::OnDamage(Player& player, TimeManager& tManager)
     }
     SpriteImageMetaData icData(player.spriteImageMetaDataMap[(int)PlayerAnimeType::ON_DAMAGE]);
     TextureRegion playerImage = SpriteUtil::ExtractionImage(player.allImage, icData, player.imageNumber);
-    DrawPlayerImage(player, playerImage, Vec2(0, 0), Vec2(0, 0));
+    DrawPlayerInvisibleImage(player, playerImage, Vec2(0, 0), Vec2(0, 0));
     ChangeOnDamageSprite(player, icData, timeManager);
+}
+
+void PlayerAnimeManager::Down(Player& player, TimeManager& tManager)
+{
+    if (player.actionState != CharaActionState::DOWN) {
+        return;
+    }
+    SpriteImageMetaData& icData(player.spriteImageMetaDataMap[(int)PlayerAnimeType::DOWN]);
+    TextureRegion playerImage = SpriteUtil::ExtractionImage(player.allImage, icData, player.imageNumber);
+    _ASSERT_EXPR(PLAYER_DOWN_SPRITE_FIX_VEC2_ARRAY.size() > player.imageNumber, L"PlayerAnimeManager::Down, OutOfRange FIX_VEC2_ARRAY");
+    Vec2 fixPos = PLAYER_DOWN_SPRITE_FIX_VEC2_ARRAY[player.imageNumber];
+    DrawPlayerImage(player, playerImage, fixPos, fixPos);
+    ChangeDownSprite(player, icData, timeManager);
 }
 
 void PlayerAnimeManager::Jump(Player& player, TimeManager &timeManager, Effect &effect)
@@ -99,26 +115,24 @@ void PlayerAnimeManager::Crouch(Player& player, TimeManager& timeManager)
         crouchNumber = 0;
         return;
     }
-
     SpriteImageMetaData icData(player.spriteImageMetaDataMap[(int)PlayerAnimeType::CROUCH]);
-
     TextureRegion playerImage = SpriteUtil::ExtractionImage(player.allImage, icData, crouchNumber);
-    DrawPlayerImage(player, playerImage, IMAGE_CROUCH_POS, IMAGE_CROUCH_POS);
-    player.UpdateDetection(0, PLAYER_FIXED_CROUCH_H, PLAYER_DETEC_W, PLAYER_CROUCH_DETEC_H);
+    Vec2 fixPos = PLAYER_CROUCH_SPRITE_FIX_VEC2_ARRAY[crouchNumber];
+    DrawPlayerImage(player, playerImage, fixPos, fixPos);
     ChangeCrouchSprite(player, icData, timeManager);
 }
 
 void PlayerAnimeManager::BulletMotion(Player& player, TimeManager& timeManager)
 {
-    BulletWarp(player, timeManager); // 攻撃１とワープのモーションは共用
+    BulletAttack1(player, timeManager); // 攻撃１とワープのモーションは共用
     BulletAttack2(player, timeManager);
     BulletAttack3(player, timeManager);
 }
 
-void PlayerAnimeManager::BulletWarp(Player& player, TimeManager& timeManager)
+void PlayerAnimeManager::BulletAttack1(Player& player, TimeManager& timeManager)
 {
-    if ((BulletMode::ATTACK_1 != player.bulletMode &&
-        BulletMode::WARP != player.bulletMode) || player.dashFlag) {
+    if ((BulletMode::ATTACK_1 != player.bulletMode && BulletMode::WARP != player.bulletMode)
+            || player.dashFlag) {
         return;
     }
     SpriteImageMetaData icData(player.spriteImageMetaDataMap[(int)PlayerAnimeType::SHOOT_ATTACK_1]);
@@ -137,27 +151,20 @@ void PlayerAnimeManager::BulletAttack2(Player& player, TimeManager& timeManager)
     SpriteImageMetaData icData(player.spriteImageMetaDataMap[(int)PlayerAnimeType::SHOOT_ATTACK_2]);
     TextureRegion playerImage = SpriteUtil::ExtractionImage(player.allImage, icData, player.attack1Number);
     Vec2 fixed = BULLET_ATTACK2_FIX_SPRITE_VEC2S[player.attack1Number];
-    //TextureRegion playerImage = player.image(0.0 + 
-    //    (player.attack1Number * fixed.x) + (player.attack1Number * BULLET_ATTACK2_SPRITE_SIZE.x),
-    //    fixed.y + BULLET_ATTACK2_SPRITE_Y, BULLET_ATTACK2_SPRITE_SIZE.movedBy(Vec2(0, 0)));
     DrawPlayerImage(player, playerImage, fixed, -fixed);
     AnimationBean ani(icData.maxImageNumber, icData.interval, timeManager.attack2SpriteSw);
     ChangeAttack1Sprite(player, ani);
 }
-
+// TODO: BulletAnimeManager
 void PlayerAnimeManager::BulletAttack3(Player& player, TimeManager& timeManager)
 {
     if (BulletMode::ATTACK_3 != player.bulletMode || player.dashFlag) {
         return;
     }
-
     Vec2 fixed = BULLET_ATTACK3_FIX_SPRITE_VEC2S[player.attack1Number];
     SpriteImageMetaData icData(player.spriteImageMetaDataMap[(int)PlayerAnimeType::SHOOT_ATTACK_3]);
     TextureRegion playerImage = SpriteUtil::ExtractionImage(player.allImage, icData, player.attackNumbers[3]);
     AnimationBean ani(icData.maxImageNumber, icData.interval, timeManager.attack3SpriteSw);
-    //TextureRegion playerImage = player.image(0.0 + 
-    //    (player.attack1Number * fixed.x) + (player.attack1Number * BULLET_ATTACK3_SPRITE_SIZE.x),
-    //    fixed.y + BULLET_ATTACK3_SPRITE_Y, BULLET_ATTACK3_SPRITE_SIZE.movedBy(Vec2(0, 0)));
     DrawPlayerImage(player, playerImage, fixed, -fixed);
     ChangeAttackNSprite(player, ani, 3);
 }
@@ -271,6 +278,18 @@ void PlayerAnimeManager::ChangeOnDamageSprite(Player& player, SpriteImageMetaDat
     }
 }
 
+void PlayerAnimeManager::ChangeDownSprite(Player& player, SpriteImageMetaData& icData, TimeManager& timeManager)
+{
+    timeManager.playerDownSpriteSw.start();
+    if (timeManager.playerDownSpriteSw.sF() >= icData.interval * PLAYER_DOWN_SLOW_FOLD) {
+        player.imageNumber--;
+        if (player.imageNumber < 0) {
+            player.imageNumber = 0;
+        }
+        timeManager.playerDownSpriteSw.reset();
+    }
+}
+
 void PlayerAnimeManager::DrawPlayerStandImage(Player player, TextureRegion playerImage)
 {
     Vec2 mapPlayerPos = GetMapPlayerPos(player);
@@ -300,11 +319,23 @@ ColorF PlayerAnimeManager::GetPlayerColor(Player player)
 
 void PlayerAnimeManager::DrawPlayerImage(Player player, TextureRegion playerImage, Vec2 leftFixed, Vec2 rightFixed)
 {
-    Vec2 mapPlayerPos = GetMapPlayerPos(player);
-    ColorF color = GetPlayerColor(player);
-    player.rightwardFlag
-        ? playerImage.draw(mapPlayerPos.movedBy(rightFixed), color)
-        : playerImage.mirrored().draw(mapPlayerPos.movedBy(leftFixed), color);
+    DrawPlayerImageAction(player, playerImage, leftFixed, rightFixed, false);
+}
+
+void PlayerAnimeManager::DrawPlayerInvisibleImage(Player player, TextureRegion playerImage, Vec2 leftFixed, Vec2 rightFixed)
+{
+    DrawPlayerImageAction(player, playerImage, leftFixed, rightFixed, true);
+}
+
+void PlayerAnimeManager::DrawPlayerImageAction(Player player, TextureRegion playerImage, Vec2 leftFixed, Vec2 rightFixed, bool isInvisible)
+{
+    if (CharaActionState::ON_DAMAGE_INVISIBLE != player.actionState || isInvisible) {
+        Vec2 mapPlayerPos = GetMapPlayerPos(player);
+        ColorF color = GetPlayerColor(player);
+        player.rightwardFlag
+            ? playerImage.draw(mapPlayerPos.movedBy(rightFixed), color)
+            : playerImage.mirrored().draw(mapPlayerPos.movedBy(leftFixed), color);
+    }
 }
 
 Vec2 PlayerAnimeManager::GetMapPlayerPos(Player player) {

@@ -27,6 +27,10 @@ void Character::OnDamage(int damage, bool isRightHit)
 {
 }
 
+void Character::KnockBack()
+{
+}
+
 bool Character::IsInvisible()
 {
 	return isInvisible;
@@ -38,4 +42,20 @@ void Character::MoveX(double moveAmt)
 
 void Character::MoveY(double moveAmt)
 {
+}
+
+bool Character::IsMovingRightInFrame(Vec2 playerPos)
+{
+	// 右方向)カメラの可動域にプレイヤーがいるか？
+	// 例)プレイヤーの基準位置が480、481に移動した場合
+	// 例)右の最端が1200なら、プレイヤーの位置が880を超えたらカメラは止まる
+	return PLAYER_STAND_POS.x < playerPos.x && playerPos.x < PLAYER_RIGHT_END_POS.x;
+}
+
+bool Character::IsFixLeftInFrame(Vec2 playerPos)
+{
+	// 右方向)カメラの可動域にプレイヤーがいるか？
+	// 例)プレイヤーの基準位置が480、481に移動した場合
+	// 例)右の最端が1200なら、プレイヤーの位置が880を超えたらカメラは止まる
+	return PLAYER_STAND_POS.x >= playerPos.x;
 }

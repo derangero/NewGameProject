@@ -64,7 +64,7 @@ public:
 	Player();
 	void OnDamageOver();
 	void Init(Font font) override;
-	void KnockBack();
+	void KnockBack() override;
 	void MoveX(double moveAmt) override;
 	void MoveY(double moveAmt) override;
 	void OnDamage(int damage, bool isRightHit) override;
@@ -76,5 +76,6 @@ public:
 	void ReplacePos(Vec2 replacePos);
 	Vec2 GetDetectionPos(HitBoxDetection detection);
 	Vec2 GetFootPos();
+	bool isFallOff();
 	void Debug(Font font);
 };

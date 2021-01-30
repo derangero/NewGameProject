@@ -1,9 +1,10 @@
 # include "MapTip.hpp"
 # include "MapCreator.hpp"
 
-MapTip::MapTip() : mapGridX(0), mapGridY(0), tipX(0.0), tipY(0.0), mapNumber(0),
-    isTouched(false) {
-}
+MapTip::MapTip() :
+    mapNumber(0),
+    isTouched(false)
+{}
 
 /// <summary>
 /// マップチップを描画します。
@@ -20,21 +21,15 @@ void MapTip::DrawMapTipTextures(Array<MapTip> mapTips, Texture allMap, Vec2 &scr
         
         MapTip mapTip = mapTips[i];
         RectF mapDetection = mapTip.detection;
-        TextureRegion tip = allMap(mapTip.tipX, mapTip.tipY, MAP_IMAGE_SQUARE_SIZE, MAP_IMAGE_SQUARE_SIZE);
+        TextureRegion tip = allMap(mapTip.tip.x, mapTip.tip.y, MAP_IMAGE_SQUARE_SIZE, MAP_IMAGE_SQUARE_SIZE);
         Vec2 mapPos = Vec2(
-            mapTip.mapGridX - screenOriginPosition.x,
-            mapTip.mapGridY - screenOriginPosition.y);
+            mapTip.mapGrid.x - screenOriginPosition.x,
+            mapTip.mapGrid.y - screenOriginPosition.y);
         // チップを描画する
         font(mapTip.mapNumber).draw(mapPos);
         //tip.draw(mapPos.x, mapPos.y, GetColorF(mapTip));
     }
 
-}
-
-ColorF MapTip::GetColorF(MapTip mapTip) {
-    return MapCreator::IsNoCollision(mapTip.mapNumber)
-        ? ColorF(1.0)
-        : ColorF(1.0, 1.0, 1.0, 0.7);
 }
 
 /// <summary>

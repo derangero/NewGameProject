@@ -1,20 +1,20 @@
 #pragma once
-# include <Siv3D.hpp>
-# include "MapTip.hpp"
-# include "MapObjectTip.hpp"
-# include "Property.hpp"
-# include "MapProperty.hpp"
-# include "Enemy.hpp"
+# include "objectTip.hpp"
 
 class MapTip;
-class MapCreator {
+class MapCreator
+{
 public:
-	MapCreator();
-	static Grid<int> CreateMapGrid();
-	static Array<MapTip> GetMapTips(Texture mapTip1);
-	static Array<MapObjectTip> GetMapObjectTip();
-	void ShowElements(const XMLElement& element);
-	static bool IsNoCollision(int imageNumber);
-	static MapObjectType GetMapObjectType(String mapObjectType);
-	static EnemyType GetEnemyType(String enemyType);
+	Array<MapTip> mapTips;
+	Array<ObjectTip> objectTips;
+public:
+	MapCreator(Texture mapTexture);
+	void CreateMapTips(Texture mapTexture);
+	void CreateObjectTip();
+	Grid<int> CreateMapGrid();
+	MapObjectType GetMapObjectType(String mapObjectType);
+	EnemyType GetEnemyType(String enemyType);
+	void SetObjectTip(Texture allMap, Vec2& screenOriginPosition);
+	Point CreateTipPoint(int imageNumber);
+	bool IsNoCollision(int imageNumber);
 };

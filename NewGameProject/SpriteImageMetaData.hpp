@@ -8,9 +8,10 @@ class SpriteImageMetaData {
 public:
 	int maxImageNumber;
 	double interval;
+	double coolTime;
 	Array<Vec2> vecs;
 	Array<Size> sizes;
 public:
 	SpriteImageMetaData();
-	SpriteImageMetaData(int maxImageNumber, double interval, Array<Vec2> vecs, Array<Size> sizes);
+	SpriteImageMetaData(int maxImageNumber, double interval, double coolTime, Array<Vec2> vecs, Array<Size> sizes);
 };

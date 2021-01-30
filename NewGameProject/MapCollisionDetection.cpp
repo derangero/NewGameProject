@@ -1,8 +1,7 @@
 #include "MapCollisionDetection.hpp"
 
 MapCollisionDetection::MapCollisionDetection()
-{
-}
+{}
 
 void MapCollisionDetection::PlayerCheckWallInit(Player& player)
 {
@@ -53,8 +52,6 @@ void MapCollisionDetection::CheckSideWall(Array<MapTip>& mapTips, Player& player
         }
         mapTip.isTouched = false;
     }
-
-
     if (player.leftWallFlag || player.rightWallFlag) {
         if (BulletMode::WARP == player.bulletMode) {
             player.ReplacePos(player.beforePos);
@@ -98,8 +95,8 @@ void MapCollisionDetection::CheckFootWall(Array<MapTip>& mapTips, Player& player
         RectF mapDetection(mapTip.detection);
         mapDetection = mapDetection.movedBy(-screenOriginPosition);
         Vec2 mapPos = Vec2(
-            mapTip.mapGridX - screenOriginPosition.x,
-            mapTip.mapGridY - screenOriginPosition.y);
+            mapTip.mapGrid.x - screenOriginPosition.x,
+            mapTip.mapGrid.y - screenOriginPosition.y);
         if (player.detection.intersects(mapDetection.movedBy(0, -0.1))) { // (-0.1 ... -7)
             Vec2 topBlock = mapDetection.top().end;
             Vec2 foot = player.detection.bottom().end;

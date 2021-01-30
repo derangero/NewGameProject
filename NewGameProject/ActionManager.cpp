@@ -6,10 +6,12 @@ PlayerManager::PlayerManager()
 
 void PlayerManager::Action(Player &player, TimeManager &timeManager, Array<MapTip>& mapTips)
 {
-    if (player.waitFlag) {
+    player.font(U"AttackNumber:", player.attack1Number).draw(280, 10);
+    if (player.waitFlag || !player.isExists) {
         return;
     }
     Init(player);
+    player.KnockBack();
     Walk(player, timeManager);
     Jump1(player, timeManager);
     Jump2(player, timeManager, mapTips);
@@ -20,7 +22,6 @@ void PlayerManager::Action(Player &player, TimeManager &timeManager, Array<MapTi
         ShootBullet(player, timeManager);
     }
     Fall(player, timeManager);
-    player.font(U"AttackNumber:", player.attack1Number).draw(280, 0);
 }
 
 void PlayerManager::Init(Player &player)
@@ -145,34 +146,27 @@ void PlayerManager::Landing(Player &player, TimeManager &timeManager) {
 
 void PlayerManager::ShootBullet(Player& player, TimeManager& timeManager)
 {
+    // HACK:どこでオブジェクトが移動しているのか全く分からん
     ShootAttackBallet1(player, timeManager); // モーションの競合注意
-    ShootAttackBallet2(player, timeManager); // 無敵つきの射撃
-    ShootAttackBallet3(player, timeManager); // 二丁拳銃
+    ShootAttackBallet2(player, timeManager); // E)無敵つきの射撃
+    ShootAttackBallet3(player, timeManager); // R)二丁拳銃
     ShootWarpBallet(player, timeManager);
 }
 
 void PlayerManager::ShootAttackBallet1(Player& player, TimeManager& timeManager)
 {
-    if (BulletMode::ATTACK_2 == player.bulletMode
-         || BulletMode::ATTACK_3 == player.bulletMode) {
-        return;
-    }
-    if (CanShootBulletAttack1(player, timeManager)) {
-        if (KeyEnter.down()) {
-            player.isShooted = true;
-            player.bulletMode = BulletMode::ATTACK_1;
-            player.bulletName = BulletName::ATTACK_1;
-            timeManager.bulletAttack1Cool.restart();
-            if (player.attack1Number == BULLET_WARP_MAX_SPRITE_NUMBER) {
-                player.attack1Number = 2;
-            }
+    if (CanShootBulletAttack1(player, timeManager) && KeyEnter.down()) {
+        BalletActionStart(player, BulletMode::ATTACK_1, BulletName::ATTACK_1, timeManager.bulletAttack1Motioning);
+        if (player.attack1Number == BULLET_WARP_MAX_SPRITE_NUMBER) {
+            player.attack1Number = 2;
         }
     }
-
-    if ((player.attack1Number > 0 && player.attack1Number == BULLET_WARP_MAX_SPRITE_NUMBER) || player.isAttack1) {
-        player.bulletMode = BulletMode::NONE;
-        player.isAttack1 = false;
-        timeManager.bulletAttack1Wait.start();
+    if (BulletMode::ATTACK_1 == player.bulletMode) {
+        player.bulletMode;
+        if ((player.attack1Number > 0 && player.attack1Number == BULLET_WARP_MAX_SPRITE_NUMBER)
+                || CharaActionState::ON_DAMAGE_INVISIBLE == player.actionState) {
+            BalletActionEnd(player, timeManager.bulletAttack1Motioning, timeManager.bulletAttack1Cool);
+        }
     }
 }
 
@@ -180,40 +174,51 @@ void PlayerManager::ShootAttackBallet2(Player& player, TimeManager& timeManager)
 {
     if (CanShootBulletAttack2(player, timeManager)) {
         if (KeyE.down()) {
-            player.isShooted = true;
-            player.bulletMode = BulletMode::ATTACK_2;
-            player.bulletName = BulletName::ATTACK_1;
+            BalletActionStart(player, BulletMode::ATTACK_2, BulletName::ATTACK_1, timeManager.bulletAttack2Motioning);
             player.isInvisible = true;
-            timeManager.bulletAttack2Wait.restart();
         }
     }
     // 反動で後ろに進む感じ
-    if (timeManager.bulletAttack2Wait.isRunning() && player.isInvisible) {
+    if (timeManager.bulletAttack2Motioning.isRunning() && player.isInvisible) {
         player.MoveX((player.rightwardFlag ? -player.delta : player.delta) / 5);
     }
-    if ((player.attack1Number > 0 && player.attack1Number == BULLET_ATTACK2_MAX_SPRITE_NUMBER)) {
-        player.bulletMode = BulletMode::NONE;
-        player.isAttack1 = false;
+    if (player.attack1Number > 0 && player.attack1Number >= BULLET_ATTACK2_MAX_SPRITE_NUMBER) {
+        //TODO:保留
+        //player.isAttack1 = false;
+        BalletActionEnd(player, timeManager.bulletAttack2Motioning, timeManager.bulletAttack2Cool);
         player.isInvisible = false;
-        timeManager.bulletAttack2Wait.start();
     }
 }
 
-void PlayerManager::ShootAttackBallet3(Player& player, TimeManager& timeManager)
+void PlayerManager::ShootAttackBallet3(Player &player, TimeManager& timeManager)
 {
-    if (CanShootBulletAttack3(player, timeManager)) {
-        if (KeyR.down()) {
-            player.isShooted = true;
-            player.bulletMode = BulletMode::ATTACK_3;
-            player.bulletName = BulletName::ATTACK_3;
-            timeManager.bulletAttack3Wait.restart();
-        }
+    if (CanShootBulletAttack3(player, timeManager) && KeyR.down()) {
+        BalletActionStart(player, BulletMode::ATTACK_3, BulletName::ATTACK_3, timeManager.bulletAttack3Motioning);
     }
-    if ((player.attackNumbers[3] > 0 && player.attackNumbers[3] == BULLET_ATTACK3_MAX_SPRITE_NUMBER)) {
-        player.bulletMode = BulletMode::NONE;
-        player.isAttack1 = false;
-        timeManager.bulletAttack3Wait.start();
+    if ((player.attackNumbers[3] > 0 && player.attackNumbers[3] >= BULLET_ATTACK3_MAX_SPRITE_NUMBER)
+        || CharaActionState::ON_DAMAGE_INVISIBLE == player.actionState) {
+        BalletActionEnd(player, timeManager.bulletAttack3Motioning, timeManager.bulletAttack3Cool);
+        player.attackNumbers[3] = 0;
     }
+}
+
+void PlayerManager::BalletActionStart(Player &player, BulletMode bulletMode, BulletName bulletName,
+        Stopwatch &motioningSw)
+{
+    player.isShooted = true;
+    player.bulletMode = bulletMode;
+    player.bulletName = bulletName;
+    motioningSw.restart();
+}
+
+void PlayerManager::BalletActionEnd(Player &player, Stopwatch &motioningSw, Stopwatch& coolSw)
+{
+    player.bulletMode = BulletMode::NONE;
+    //TODO:悪影響がないか？
+    //player.bulletName = bulletName::NONE;
+    player.attack1Number = 0;
+    motioningSw.reset();
+    coolSw.restart();
 }
 
 void PlayerManager::ShootWarpBallet(Player& player, TimeManager& timeManager) {
@@ -303,19 +308,24 @@ bool PlayerManager::CanCrouch(Player player)
 }
 
 bool PlayerManager::CanShootBulletAttack1(Player& player, TimeManager &timeManager) {
-    return notDashCrouch(player) && !timeManager.bulletAttack1Cool.isRunning();
+    return notDashCrouch(player)
+        && player.bulletMode == BulletMode::NONE
+        && !timeManager.bulletAttack1Motioning.isRunning()
+        && !timeManager.bulletAttack1Cool.isRunning();
 }
 
 bool PlayerManager::CanShootBulletAttack2(Player& player, TimeManager &timeManager) {
     return notDashCrouch(player)
         && player.bulletMode == BulletMode::NONE
-        && !timeManager.bulletAttack2Wait.isRunning();
+        && !timeManager.bulletAttack2Motioning.isRunning()
+        && !timeManager.bulletAttack2Cool.isRunning();
 }
 
 bool PlayerManager::CanShootBulletAttack3(Player& player, TimeManager &timeManager) {
     return notDashCrouch(player)
         && player.bulletMode == BulletMode::NONE
-        && !timeManager.bulletAttack3Wait.isRunning();
+        && !timeManager.bulletAttack3Motioning.isRunning()
+        && !timeManager.bulletAttack3Cool.isRunning();
 }
 
 bool PlayerManager::CanShootWarpBullet(Player& player, TimeManager &timeManager) {
@@ -323,7 +333,7 @@ bool PlayerManager::CanShootWarpBullet(Player& player, TimeManager &timeManager)
 }
 
 bool PlayerManager::notDashCrouch(Player player) {
-    return !player.dashFlag && !player.afterDashFlag;
+    return !player.dashFlag && !player.afterDashFlag && !player.crouchFlag;
 }
 
 bool PlayerManager::IsFalling(Player player)

@@ -40,7 +40,9 @@ enum class EnemyType
 {
 	NONE,
 	EYE,
-	HAMBURG
+	HAMBURG,
+	GOB,
+	SKULL
 };
 
 enum class CharaActionState // TODO:状態異常があれば別で管理する？
@@ -50,8 +52,8 @@ enum class CharaActionState // TODO:状態異常があれば別で管理する？
 	ATTACK,
 	ON_DAMAGE,
 	ON_DAMAGE_INVISIBLE,
-	DOWN
-
+	DOWN,
+	CHASE
 };
 
 enum class CharaAttackState
@@ -61,6 +63,7 @@ enum class CharaAttackState
 	ATTACK_B,
 	ATTACK_C,
 	ATTACK_D,
+	CHASE_ATTACK_A
 };
 
 enum class HitBoxDetection
@@ -81,9 +84,13 @@ enum class AnimationEndMode
 enum class BulletMode
 {
 	NONE,
+	// ワープ射撃
 	WARP,
+	// 通常射撃
 	ATTACK_1,
+	// ノックバック+無敵付きの射撃
 	ATTACK_2,
+	// 二丁拳銃の射撃
 	ATTACK_3
 };
 
@@ -107,7 +114,7 @@ enum class PlayerAnimeType
 	CROUCH,
 	GARD, // 使わない
 	ON_DAMAGE,
-	RISE,
+	DOWN, // スプライトする順番が逆
 	SHOOT_ATTACK_1,
 	SINGLE_BULLET,
 	SHOOT_ATTACK_2,
@@ -126,7 +133,8 @@ enum class EnemyAnimeType
 	ATTACK1,
 	ATTACK2,
 	ATTACK3,
-	ATTACK4
+	ATTACK4,
+	GURD
 };
 
 enum class AfterOnDamage
@@ -134,4 +142,11 @@ enum class AfterOnDamage
 	WAIT,
 	MOVE,
 	RUN_OUT
+};
+
+enum class EnemyAttackType
+{
+	NONE,
+	LONG_RANGE,
+	CLOSE_RANGE
 };

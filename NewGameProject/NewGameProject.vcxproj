@@ -117,12 +117,13 @@
     <ClCompile Include="EnemyAnimeManager.cpp" />
     <ClCompile Include="EnemyManager.cpp" />
     <ClCompile Include="GameObj.cpp" />
+    <ClCompile Include="GameOverManager.cpp" />
     <ClCompile Include="SpriteImageMetaData.cpp" />
     <ClCompile Include="MapTip.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="ObjectCollisionDetection.cpp" />
     <ClCompile Include="BulletManager.cpp" />
-    <ClCompile Include="ObjectMapTip.cpp" />
+    <ClCompile Include="ObjectTip.cpp" />
     <ClCompile Include="MapCollisionDetection.cpp" />
     <ClCompile Include="PlayerAnimeManager.cpp" />
     <ClCompile Include="CalcHelper.cpp" />
@@ -261,6 +262,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GameOverManager.hpp" />
     <ClInclude Include="PlayerManager.hpp" />
     <ClInclude Include="AfterImage.hpp" />
     <ClInclude Include="Animation.hpp" />
@@ -280,7 +282,7 @@
     <ClInclude Include="Object.hpp" />
     <ClInclude Include="ObjectCollisionDetection.hpp" />
     <ClInclude Include="BulletManager.hpp" />
-    <ClInclude Include="MapObjectTip.hpp" />
+    <ClInclude Include="ObjectTip.hpp" />
     <ClInclude Include="MapCollisionDetection.hpp" />
     <ClInclude Include="PlayerAnimeManager.hpp" />
     <ClInclude Include="CalcHelper.hpp" />

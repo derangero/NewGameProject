@@ -7,7 +7,7 @@ TimeManager::TimeManager() : time(0.0), dashTime(0.0), afterImageInterval(true)
 void TimeManager::Control(Player& player)
 {
     Update();
-    UpdateWhenOverTime(player);
+    ManageCoolTime(player);
 }
 
 void TimeManager::Update()
@@ -17,41 +17,39 @@ void TimeManager::Update()
     }
 }
 
-void TimeManager::UpdateWhenOverTime(Player& player)
+void TimeManager::ManageCoolTime(Player& player)
 {
     if (player.waitFlag) {
         return;
     }
-    UpdateByAttack1Wait(player);
-    UpdateByAttack2Wait(player);
-    UpdateByAttack3Wait(player);
-    UpdateByBulletWarpWait(player);
+    UpdateByAttack1Cool(player);
+    UpdateByAttack2Cool(player);
+    UpdateByAttack3Cool(player);
+    UpdateByBulletWarpCool(player);
 }
 
-void TimeManager::UpdateByAttack1Wait(Player& player) {
-    if (bulletAttack1Wait.sF() > ATTACK1_SPRITE_WAIT) {
-        player.attack1Number = 0;
-        bulletAttack1Wait.reset();
+void TimeManager::UpdateByAttack1Cool(Player& player) {
+    if (bulletAttack1Cool.sF() > ATTACK1_SPRITE_WAIT) {
+        bulletAttack1Cool.reset();
     }
 }
 
-void TimeManager::UpdateByAttack2Wait(Player& player) {
-    if (bulletAttack2Wait.sF() > ATTACK2_SPRITE_WAIT) {
-        player.attack1Number = 0;
-        bulletAttack2Wait.reset();
+void TimeManager::UpdateByAttack2Cool(Player& player) {
+    if (bulletAttack2Cool.sF() > ATTACK2_SPRITE_WAIT) {
+        bulletAttack2Cool.reset();
     }
 }
 
-void TimeManager::UpdateByAttack3Wait(Player& player) {
-    if (bulletAttack3Wait.sF() > ATTACK3_SPRITE_WAIT) {
-        player.attackNumbers[3] = 0;
-        bulletAttack3Wait.reset();
+void TimeManager::UpdateByAttack3Cool(Player& player) {
+    if (bulletAttack3Cool.sF() > ATTACK3_SPRITE_COOL) {
+        bulletAttack3Cool.reset();
     }
 }
 
-void TimeManager::UpdateByBulletWarpWait(Player& player) {
+void TimeManager::UpdateByBulletWarpCool(Player& player) {
     if (bulletWarpWait.isRunning()
             && bulletWarpWait.sF() > BULLET_WARP_SPRITE_WAIT) {
+        //TODO:à·Ç§çUåÇÇ≈Ç‡í ÇÈ
         player.attack1Number = 0;
         bulletWarpWait.reset();
     }

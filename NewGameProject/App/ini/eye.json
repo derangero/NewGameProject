@@ -2,6 +2,7 @@
   "Seq1": {
     "maxImageNumber": 7,
     "interval": "0.30",
+	"coolTime": "1.00",
     "status": 6,
     "vecs": [
       "(57, 61)",
@@ -27,6 +28,7 @@
   "Seq2": {
     "maxImageNumber": 9,
     "interval": "0.30",
+	"coolTime": "1.00",
     "status": 7,
     "vecs": [
       "(57, 199)",
@@ -56,6 +58,7 @@
   "Seq3": {
     "maxImageNumber": 5,
     "interval": "0.15",
+	"coolTime": "1.00",
     "status": 5,
     "vecs": [
       "(68, 360)",
@@ -77,6 +80,7 @@
   "Seq4": {
     "maxImageNumber": 3,
     "interval": "0.15",
+	"coolTime": "1.00",
     "status": 4,
     "vecs": [
       "(57, 511)",
@@ -94,6 +98,7 @@
   "Seq5": {
     "maxImageNumber": 7,
     "interval": "0.15",
+	"coolTime": "1.00",
     "status": 2,
     "vecs": [
       "(57, 660)",
@@ -119,6 +124,7 @@
   "Seq6": {
     "maxImageNumber": 21,
     "interval": "0.30",
+	"coolTime": "1.00",
     "status": 0,
     "vecs": [
       "(16, 751)",
@@ -172,6 +178,7 @@
   "Seq7": {
     "maxImageNumber": 2,
     "interval": "0.15",
+	"coolTime": "1.00",
     "status": 3,
     "vecs": [
       "(57, 961)",
@@ -187,6 +194,7 @@
    "Seq8": {
     "maxImageNumber": 7,
     "interval": "0.15",
+	"coolTime": "1.00",
     "status": 1,
     "vecs": [
       "(57, 660)",

@@ -112,8 +112,8 @@ static Array<Vec2> BULLET_ATTACK3_FIX_SPRITE_VEC2S = {
 	Vec2(0, 0), Vec2(0, 0), Vec2(1, 0), Vec2(1, 0), Vec2(4, 0), Vec2(4, 0), Vec2(7, 0),
 	Vec2(9, 0), Vec2(9, 0), Vec2(1, 0), Vec2(1, 0), Vec2(0, 0),
 };
-// ウェイトタイム
-constexpr auto ATTACK3_SPRITE_WAIT = 3.0;
+// クールタイム
+constexpr auto ATTACK3_SPRITE_COOL = 3.0;
 
 // 被ダメージ時
 // スプライト画像のY座標指定(頂点)
@@ -131,14 +131,28 @@ constexpr auto PLAYER_SQUEEZE_A = 0.1;
 // 最大スプライト画像
 constexpr auto PLAYER_ONDAMEGE_MAX_SPRITE_NUMBER = 3;
 
+// ダウン時
+// 修正用の画像サイズ
+static Array<Vec2> PLAYER_DOWN_SPRITE_FIX_VEC2_ARRAY = {
+	Vec2(0, 15), Vec2(0, 7), Vec2(0, 7), Vec2(0, 7), Vec2(0, 0),
+	Vec2(0, 0), Vec2(0, 0)
+};
+// スプライト切り替え速度を遅くする倍率
+constexpr auto PLAYER_DOWN_SLOW_FOLD = 3.0;
+
 // プレイヤーのHP
 constexpr auto PLAYER_HP = 10;
+// プレイヤーのひん死HP
+constexpr auto PLAYER_DANGER_HP = 2;
 // プレイヤーの位置(X)
 constexpr auto PLAYER_STAND_POS_X = 400;
 // プレイヤーの位置(Y)
 constexpr auto PLAYER_STAND_POS_Y = 480;
 // プレイヤーの中心となる座標
 constexpr auto PLAYER_STAND_POS = Vec2(PLAYER_STAND_POS_X, PLAYER_STAND_POS_Y);
+// カメラを動かさない基準(右側最大... 1200)
+constexpr auto PLAYER_RIGHT_END_POS = Vec2(880, PLAYER_STAND_POS_Y);
+
 // プレイヤーの当たり判定(高さ)
 constexpr auto PLAYER_DETEC_H = 54.1;
 // プレイヤーの当たり判定(幅)
@@ -149,7 +163,9 @@ constexpr auto FIXED_STAND_LEFT_X = -10;
 
 // 画像表示の補正
 // しゃがみ
-constexpr auto IMAGE_CROUCH_POS = Vec2(0, 5);
+static Array<Vec2> PLAYER_CROUCH_SPRITE_FIX_VEC2_ARRAY = {
+	Vec2(0, 0), Vec2(0, -10), Vec2(0, -7), Vec2(0, -12), Vec2(0, -14)
+};
 // 歩き
 constexpr auto IMAGE_WALK_POS = Vec2(-18, 8);
 // ジャンプ

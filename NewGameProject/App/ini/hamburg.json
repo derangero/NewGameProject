@@ -2,6 +2,7 @@
   "Seq1": {
     "maxImageNumber": 7,
     "interval": "0.10",
+	"coolTime": "1.00",
 	"status": 5,
     "vecs": [
       "(64, 56)",
@@ -27,6 +28,7 @@
   "Seq2": {
     "maxImageNumber": 3,
     "interval": "0.20",
+	"coolTime": "1.00",
 	"status": 4,
     "vecs": [
       "(64, 214)",
@@ -44,6 +46,7 @@
   "Seq3": {
     "maxImageNumber": 3,
     "interval": "0.30",
+	"coolTime": "1.00",
 	"status": 1,
     "vecs": [
       "(64, 364)",
@@ -61,6 +64,7 @@
   "Seq4": {
     "maxImageNumber": 7,
     "interval": "0.20",
+	"coolTime": "1.00",
 	"status": 2,
     "vecs": [
       "(62, 512)",
@@ -86,6 +90,7 @@
   "Seq5": {
     "maxImageNumber": 3,
     "interval": "0.15",
+	"coolTime": "1.00",
 	"status": 3,
     "vecs": [
       "(64, 658)",

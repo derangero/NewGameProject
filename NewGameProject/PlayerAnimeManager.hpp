@@ -29,10 +29,11 @@ public:
 	void Crouch(Player& player, TimeManager& timeManager);
 	void GrabLadder(Player& player, TimeManager& tManager);
 	void BulletMotion(Player& player, TimeManager& timeManager);
-	void BulletWarp(Player& player, TimeManager& timeManager);
+	void BulletAttack1(Player& player, TimeManager& timeManager);
 	void BulletAttack2(Player& player, TimeManager& timeManager);
 	void BulletAttack3(Player& player, TimeManager& timeManager);
 	void OnDamage(Player& player, TimeManager& timeManager);
+	void Down(Player& player, TimeManager& timeManager);
 	bool DrawFallAnime(Player& player);
 	void ChangeRunSprite(Player player, SpriteImageMetaData icData, TimeManager& timeManager);
 	void ChangeJumpSprite(Player player, SpriteImageMetaData icData, TimeManager& timeManager);
@@ -40,11 +41,14 @@ public:
 	void ChangeCrouchSprite(Player player, SpriteImageMetaData icData, TimeManager& timeManager);
 	void ChangeAttack1Sprite(Player &player, AnimationBean& aniBean);
 	void ChangeAttackNSprite(Player &player, AnimationBean& aniBean, int n);
+	void ChangeOnDamageSprite(Player& player, SpriteImageMetaData icData, TimeManager& timeManager);
+	void ChangeDownSprite(Player& player, SpriteImageMetaData& icData, TimeManager& timeManager);
 	void DrawPlayerImage(Player player, TextureRegion playerImage, Vec2 leftFixed, Vec2 rightFixed);
+	void DrawPlayerInvisibleImage(Player player, TextureRegion playerImage, Vec2 leftFixed, Vec2 rightFixed);
+	void DrawPlayerImageAction(Player player, TextureRegion playerImage, Vec2 leftFixed, Vec2 rightFixed, bool isInvisible);
 	void DrawPlayerStandImage(Player player, TextureRegion playerImage);
 	Vec2 GetMapPlayerPos(Player player);
 	void DrawPlayerAfterImage(Player player, TextureRegion playerImage, TimeManager& timeManager, Effect& _effect);
 	ColorF GetPlayerColor(Player player);
-	void ChangeOnDamageSprite(Player& player, SpriteImageMetaData icData, TimeManager& timeManager);
 	TextureRegion ExtractionImage(Player player, SpriteImageMetaData icData, int imageNumber);
 };

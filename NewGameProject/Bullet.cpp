@@ -21,7 +21,8 @@ void Bullet::Update(Vec2& playerPos, RectF& detection)
 	pos.x = Direction::LEFT == direction
 		? pos.x - (Scene::DeltaTime() * velocity)
 		: pos.x + (Scene::DeltaTime() * velocity);
-	hitBox = image.region(GetBulletPos(playerPos, detection));
+	Vec2 bulletPos = GetBulletPos(playerPos, detection);
+	hitBox = image.region(bulletPos);
 }
 
 // playerImageにバレット画像があるので
@@ -31,11 +32,11 @@ void Bullet::Draw(Vec2& playerPos, RectF& detection)
 }
 
 // playerImageにバレット画像があるので
-void Bullet::Draw(Vec2& playerPos, RectF& detection, BulletName bulletMode, Texture playerImage,
-	std::unordered_map<int, SpriteImageMetaData> imageCoordinateMap, TimeManager& timeMngr)
+void Bullet::Draw(Vec2& playerPos, RectF& detection, BulletName bulletName, Texture playerImage,
+	std::unordered_map<int, SpriteImageMetaData> spriteImageMetaMap, TimeManager& timeMngr)
 {
-	if (name == BulletName::ATTACK_3) {
-		SpriteImageMetaData icData(imageCoordinateMap[(int)PlayerAnimeType::SHOOT_ATTACK_3]);
+	if (bulletName == BulletName::ATTACK_3) {
+		SpriteImageMetaData icData(spriteImageMetaMap[(int)PlayerAnimeType::SHOOT_ATTACK_3]);
 		Vec2 targetVec2(icData.vecs[imageNumbers[3]]);
 		Size targetSize(icData.sizes[imageNumbers[3]]);
 		playerImage(targetVec2, targetSize).draw(GetBulletPos(playerPos, detection));
@@ -50,7 +51,7 @@ void Bullet::Draw(Vec2& playerPos, RectF& detection, BulletName bulletMode, Text
 
 void Bullet::ChangeNSprite(AnimationBean& aniBean, Array<int>& imageNumbers, int n)
 {
-	int & imageNumber = imageNumbers[n];
+	int &imageNumber = imageNumbers[n];
 	aniBean.sw.start();
 	if (aniBean.sw.sF() >= aniBean.interval) {
 		imageNumber += 1;

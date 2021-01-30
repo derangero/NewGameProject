@@ -9,7 +9,7 @@ class TimeManager;
 class Bullet : public Object {
 public:
 	/* –¼‘O */
-	BulletName name;
+	BulletName bulletName;
 	/* ”­ŽË‚µ‚½ƒLƒƒƒ‰‚Ì–¼‘O */
 	String owner;
 	/* ‰æ‘œ */

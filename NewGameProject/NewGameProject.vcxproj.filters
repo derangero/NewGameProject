@@ -159,9 +159,6 @@
     <ClCompile Include="MapCreator.cpp">
       <Filter>Source Files\Map</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectMapTip.cpp">
-      <Filter>Source Files\Map</Filter>
-    </ClCompile>
     <ClCompile Include="MapTip.cpp">
       <Filter>Source Files\Map</Filter>
     </ClCompile>
@@ -224,6 +221,12 @@
     </ClCompile>
     <ClCompile Include="SpriteImageMetaData.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameOverManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectTip.cpp">
+      <Filter>Source Files\Map</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -550,9 +553,6 @@
     <ClInclude Include="TextureManager.hpp">
       <Filter>Header Files\Texture</Filter>
     </ClInclude>
-    <ClInclude Include="MapObjectTip.hpp">
-      <Filter>Header Files\Map</Filter>
-    </ClInclude>
     <ClInclude Include="Enemy.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -594,6 +594,12 @@
     </ClInclude>
     <ClInclude Include="SpriteUtil.hpp">
       <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="GameOverManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectTip.hpp">
+      <Filter>Header Files\Map</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

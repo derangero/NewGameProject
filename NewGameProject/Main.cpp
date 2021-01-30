@@ -14,6 +14,7 @@
 # include "EnemyAnimeManager.hpp"
 # include "GameObj.hpp"
 # include "EnemyManager.hpp"
+# include "GameOverManager.hpp"
 
 void Main()
 {
@@ -22,7 +23,7 @@ void Main()
     Player player;
     Texture mapTexture2(U"map/customTileset.png");
     // 2021/01/11 ↑までコード整理済
-    Array<MapObjectTip> mapObjectTips = MapCreator::GetMapObjectTip();
+    MapCreator mapCreator(mapTexture2);
     MapCollisionDetection mapCollisionDetection;
     ObjectCollisionDetection objectCollisionDetection;
     MapScreenHelper mapScreenHelper;
@@ -32,38 +33,50 @@ void Main()
     TimeManager timeManager;
     PlayerAnimeManager playerAnimeManager;
     EnemyAnimeManager enemyAnimeManager;
-    GameObj gameObj;
+    GameOverManager gameOverManager;
+    GameObj gameObj(mapCreator, player.spriteImageMetaDataMap);
     while (System::Update())
     {
         #ifdef _DEBUG
         player.Debug(gameObj.font);
         gameObj.font(Cursor::Pos()).draw(600, 0);
+        gameObj.font(player.crouchFlag).draw(600, 20);
         #endif _DEBUG
         // 初期化処理
         gameObj.Init(player);
         gameObj.DisplayAnimeTypeForDebug(Vec2(600, 70));
         // プレイヤーのアクション
-        playerManager.Action(player, timeManager, gameObj.mapTips);
+        playerManager.Action(player, timeManager, mapCreator.mapTips);
         // バレット処理
         gameObj.BulletAction(player, gameObj, timeManager);
         // マップのあたり判定
-        mapCollisionDetection.CheckWall(gameObj.mapTips, player, mapScreenHelper);
+        // 一応、キャラの移動は判定前が前提
+        mapCollisionDetection.CheckWall(gameObj.mapCreator.mapTips, player, mapScreenHelper);
         // あたり判定
-        objectCollisionDetection.Check(mapObjectTips, player, mapScreenHelper, timeManager);
+        objectCollisionDetection.Check(mapCreator, player, mapScreenHelper, timeManager);
         // ストップウォッチ系の管理
         timeManager.Control(player);
 
         Vec2 screenOriginPosition(MapScreenHelper::ChangeWorldToScreenPos(player.pos));
-        MapTip::DrawMapTipTextures(gameObj.mapTips, mapTexture2, screenOriginPosition, gameObj.smallFont);
-        MapObjectTip::SetMapObjectTip(mapObjectTips, mapTexture2, screenOriginPosition);
-        // プレイヤーのアニメーション描画
-        playerAnimeManager.Draw(player, timeManager, effect);
+        MapTip::DrawMapTipTextures(mapCreator.mapTips, mapTexture2, screenOriginPosition, gameObj.smallFont);
+        
+        mapCreator.SetObjectTip(mapTexture2, screenOriginPosition);
         // デバッグ用
         player.DrawDetection();
         // 敵のアクション
-        enemyManager.Action(gameObj);
+        enemyManager.Action(gameObj, player);
         // 敵の描画
         enemyManager.Draw(enemyAnimeManager, gameObj, player);
+        // プレイヤーのアニメーション描画
+        playerAnimeManager.Draw(player, timeManager, effect);
+        // ゲームオーバーの処理
+        gameOverManager.DrawScene(player, playerAnimeManager, timeManager, effect);
+        
+        // HPが低いときの画面エフェクト
+        // Scene::Center()注意
+        if (player.hp < PLAYER_DANGER_HP && player.hp > 0) {
+           Shape2D::NStar(550, 450, 480, Scene::Center()).draw(Color(255, 77, 77, 0 + int32(40.0 * Periodic::Sine0_1(2s))));
+        }
     }
 }
 

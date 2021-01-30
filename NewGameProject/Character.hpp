@@ -59,7 +59,10 @@ public:
 	virtual void Init(Font font);
 	virtual void Action(Array<Bullet>& bullets);
 	virtual void OnDamage(int damage, bool rightHit);
+	virtual void KnockBack();
 	virtual bool IsInvisible();
 	virtual void MoveX(double moveAmt);
 	virtual void MoveY(double moveAmt);
+	bool IsMovingRightInFrame(Vec2 playerPos);
+	bool IsFixLeftInFrame(Vec2 playerPos);
 };

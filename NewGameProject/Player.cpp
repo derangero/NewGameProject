@@ -26,8 +26,7 @@ Player::Player() :
 		isShooted(false),
 		radderMode(RadderMode::NONE),
 		detection(RectF(PLAYER_STAND_POS.x, PLAYER_STAND_POS.y, PLAYER_DETEC_W, PLAYER_DETEC_H)),// x軸をずらす
-		attackNumbers({ 0, 0, 0, 0 }),
-		bulletName(BulletName::NONE)
+		attackNumbers({ 0, 0, 0, 0 })
 {
 	this->allImage = Texture(U"image/LaraCroft.png");
 	this->pos = Vec2(PLAYER_STAND_POS.x, PLAYER_STAND_POS.y);
@@ -42,12 +41,15 @@ Player::Player() :
 /// </summary>
 void Player::Init(Font font)
 {
-	OnDamageOver();
+	if (!isExists) {
+		return;
+	}
 	this->deltaTime = Scene::DeltaTime();
 	this->delta = MOVE_STANDARD_X * deltaTime;
 	InitDetection();
 	waitCount = waitFlag ? waitCount + 1 : 0;
 	this->font = font;
+	OnDamageOver();
 }
 
 /// <summary>
@@ -65,7 +67,6 @@ void Player::OnDamageOver()
 			isInvisible = false;
 			waitSw.pause();
 		}
-		KnockBack();
 	}
 }
 
@@ -87,8 +88,14 @@ void Player::InitDetection()
 	double x = MapScreenHelper::IsMoveCameraX(pos.x) ? PLAYER_STAND_POS.x : pos.x;
 	//TODO:Y軸は要確認
 	double y = MapScreenHelper::IsMoveCameraY(pos.y) ? PLAYER_STAND_POS.y : pos.y;
-	RectF playerRect(x, y, PLAYER_DETEC_W, PLAYER_DETEC_H); // x軸をずらす
-	detection = playerRect;
+	if (!crouchFlag) {
+		RectF playerRect(x, y, PLAYER_DETEC_W, PLAYER_DETEC_H); // x軸をずらす
+		detection = playerRect;
+	}
+	else {
+		RectF playerRect(x, y - 0, PLAYER_DETEC_W, PLAYER_CROUCH_DETEC_H); // x軸をずらす
+		detection = playerRect;
+	}
 }
 
 /// <summary>
@@ -147,15 +154,26 @@ void Player::OnDamage(int damage, bool isRightHit)
 	}
 	hp -= damage;
 	//TODO: SE鳴らす
-	waitSw.restart();
 	if (hp <= 0) {
 		actionState = CharaActionState::DOWN;
+		jumpFallFlag = false;
+		naturalFallFlag = false;
+		isExists = false;
+		detection = Rect();
+		SpriteImageMetaData& icData(spriteImageMetaDataMap[(int)PlayerAnimeType::DOWN]);
+		imageNumber = icData.maxImageNumber; // スプライトを逆順で表示するので
 	}
 	else {
 		actionState = CharaActionState::ON_DAMAGE_INVISIBLE;
+		isInvisible = true;
+		dashFlag = false;
+		crouchFlag = false;
+		//TODO:要注意
+		//bulletMode = BulletMode::NONE;
+		//bulletName = bulletName::NONE;
+		waitSw.restart();
 	}
 	isActive = false;
-	isInvisible = true;
 	this->isRightHit = isRightHit;
 }
 
@@ -183,6 +201,11 @@ Vec2 Player::GetFootPos()
 	return vertical;
 }
 
+bool Player::isFallOff()
+{
+	return detection.top().begin.y > Scene::Size().y;
+}
+
 void Player::Debug(Font font)
 {
 	Vec2 topBegin = GetDetectionPos(HitBoxDetection::TOP_BEGIN);
@@ -200,6 +223,28 @@ void Player::Debug(Font font)
 	font(U"FootY:", bottomBegin.y).draw(0, 80);
 	Line(bottomBegin, bottomEnd).draw(Palette::Red); // 横線
 	Line(centerBottomBegin, vertical).draw(Palette::Red); // 縦線
+
+	String dispActionState = U"NONE";
+	if (CharaActionState::WAIT == actionState) {
+		dispActionState = U"WAIT";
+	}
+	else if (CharaActionState::ATTACK == actionState) {
+		dispActionState = U"ATTACK";
+	}
+	else if (CharaActionState::DOWN == actionState) {
+		dispActionState = U"DOWN";
+	}
+	else if (CharaActionState::MOVE == actionState) {
+		dispActionState = U"MOVE";
+	}
+	else if (CharaActionState::ON_DAMAGE == actionState) {
+		dispActionState = U"ON_DAMAGE";
+	}
+	else if (CharaActionState::ON_DAMAGE_INVISIBLE == actionState) {
+		dispActionState = U"ON_DAMAGE_INVISIBLE";
+	}
+	font(U"PlayerActionState:", dispActionState).draw(0, 300);
+	font(U"PlayerImageNumber:", imageNumber).draw(0, 340);
 }
 
 void Player::DrawDetection() {
@@ -214,6 +259,6 @@ void Player::DrawDetection() {
 /// <param name="w">変更後の幅</param>
 /// <param name="h">変更後の高さ</param>
 void Player::UpdateDetection(double diffPosX, double diffPosY, double w, double h) {
-	RectF playerRect(PLAYER_STAND_POS.x + diffPosX, PLAYER_STAND_POS.y + diffPosY, w, h); // x軸をずらす
-	detection = playerRect;
+	//RectF playerRect(detection.x + diffPosX, detection.y + diffPosY, w, h); // x軸をずらす
+	//detection = playerRect;
 }

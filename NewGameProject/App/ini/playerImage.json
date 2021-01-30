@@ -113,7 +113,7 @@
   },
   "Seq7": {
     "maxImageNumber": 9,
-    "interval": "0.09",
+    "interval": "0.10",
     "vecs": [
       "(7, 453)",
       "(45, 453)",
@@ -163,7 +163,7 @@
   },
   "Seq9": {
     "maxImageNumber": 4,
-    "interval": "0.05",
+    "interval": "0.03",
     "vecs": [
       "(10, 611)",
       "(57, 611)",

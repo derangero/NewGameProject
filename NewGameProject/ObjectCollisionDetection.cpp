@@ -11,7 +11,7 @@ void ObjectCollisionDetection::PlayerCheckWallInit(Player& player)
     player.touchedRightObjects.clear();
 }
 
-void ObjectCollisionDetection::Check(Array<MapObjectTip>& mapTips, Player& player, MapScreenHelper& screenHelper, TimeManager &tManager)
+void ObjectCollisionDetection::Check(MapCreator& mapCreator, Player& player, MapScreenHelper& screenHelper, TimeManager &tManager)
 {
     if (RadderMode::GRABBED == player.radderMode) {
         if (KeyW.pressed()) {
@@ -29,21 +29,20 @@ void ObjectCollisionDetection::Check(Array<MapObjectTip>& mapTips, Player& playe
     else if (RadderMode::NONE == player.radderMode) {
         player.waitFlag = false;
     }
-    CheckFoot(mapTips, player, screenHelper);
+    CheckSide(mapCreator.objectTips, player, screenHelper, tManager);
+    CheckFoot(mapCreator.objectTips, player, screenHelper);
     if (player.waitFlag || RadderMode::GRABBED == player.radderMode) {
         return;
     }
     PlayerCheckWallInit(player);
-    CheckSide(mapTips, player, screenHelper, tManager);
     //CheckHeadWall(mapTips, player, screenHelper);
 }
 
-void ObjectCollisionDetection::CheckSide(Array<MapObjectTip>& mapObjectTips, Player& player, MapScreenHelper& screenHelper, TimeManager& tManager)
+void ObjectCollisionDetection::CheckSide(Array<ObjectTip>& objectTips, Player& player, MapScreenHelper& screenHelper, TimeManager& tManager)
 {
-    Vec2 screenOriginPosition(screenHelper.MoveMapObject(player.pos, mapObjectTips));
-    for (auto i : step(mapObjectTips.size())) {
-        MapObjectTip mapObjectTip = mapObjectTips[i];
-        RectF mapObjectDetection(mapObjectTip.detection);
+    Vec2 screenOriginPosition(screenHelper.MoveMapObject(player.pos, objectTips));
+    for (auto objectTip : objectTips) {
+        RectF mapObjectDetection(objectTip.detection);
         mapObjectDetection = mapObjectDetection.movedBy(-screenOriginPosition);
         // ÉvÉåÉCÉÑÅ[
         Vec2 foot = player.detection.bottom().end;
@@ -58,14 +57,12 @@ void ObjectCollisionDetection::CheckSide(Array<MapObjectTip>& mapObjectTips, Pla
         
         if (player.detection.intersects(mapObjectDetection)) {
             if (IsTouchedLeftWall(player, mapObjectDetection)) {
-                if (KeyEnter.pressed()) {
-                    player.ReplaceX(mapObjectTip.mapGridX - 16);
-                }
-                player.touchedLeftObjects.push_back(mapObjectTip.type);
+                CheckSideAction(player, objectTip);
+                player.touchedLeftObjects.push_back(objectTip.type);
                 break;
             }
             if (IsTouchedRightWall(player, mapObjectDetection)) {
-                player.touchedRightObjects.push_back(mapObjectTip.type);
+                CheckSideAction(player, objectTip);
                 break;
             }
         }
@@ -84,27 +81,37 @@ void ObjectCollisionDetection::CheckSide(Array<MapObjectTip>& mapObjectTips, Pla
             player.shortJumpYList.clear();
         }
     }
-
 }
 
-void ObjectCollisionDetection::CheckFoot(Array<MapObjectTip>& mapTips, Player& player, MapScreenHelper& screenHelper)
+void ObjectCollisionDetection::CheckSideAction(Player &player, ObjectTip objectTip)
+{
+    if (objectTip.type == MapObjectType::TOP_ROCK
+            && RadderMode::GRABBED != player.radderMode) {
+        player.ReplaceX(player.beforePos.x);
+    }
+    else if (KeyEnter.pressed()) {
+        player.ReplaceX(objectTip.mapGrid.x - 16);
+    }
+}
+
+void ObjectCollisionDetection::CheckFoot(Array<ObjectTip>& mapTips, Player& player, MapScreenHelper& screenHelper)
 {
     Vec2 screenOriginPosition(screenHelper.MoveMapObject(player.pos, mapTips));
     bool detected = false;
     for (auto i : step(mapTips.size())) {
-        MapObjectTip mapTip = mapTips[i];
+        ObjectTip mapTip = mapTips[i];
         if (mapTip.type == RIGHT_SLOPE) {
             if (CheckRightDownSlope(player, mapTip, screenOriginPosition)) {
                 break;
             }
         }
         else {
-            MapObjectTip mapTip = mapTips[i];
+            ObjectTip mapTip = mapTips[i];
             RectF mapDetection(mapTip.detection);
             mapDetection = mapDetection.movedBy(-screenOriginPosition);
             Vec2 mapPos = Vec2(
-                mapTip.mapGridX - screenOriginPosition.x,
-                mapTip.mapGridY - screenOriginPosition.y);
+                mapTip.mapGrid.x - screenOriginPosition.x,
+                mapTip.mapGrid.y - screenOriginPosition.y);
             if (player.detection.intersects(mapDetection.movedBy(0, -0.1))) { // (-0.1 ... -7)
                 detected = true;
                 Vec2 topBlock = mapDetection.top().end;
@@ -170,15 +177,15 @@ bool ObjectCollisionDetection::IsTouchedRightWall(Player player, RectF map)
     return foot.y > topBlock.y + 0.1 && left.x <= leftBlock.x && right.x > rightBlock.x;
 }
 
-bool ObjectCollisionDetection::CheckRightDownSlope(Player& player, MapObjectTip mapTip, Vec2 screenOriginPosition)
+bool ObjectCollisionDetection::CheckRightDownSlope(Player& player, ObjectTip mapTip, Vec2 screenOriginPosition)
 {
     Quad quadDetection(mapTip.quadDetection);
     quadDetection = quadDetection.movedBy(-screenOriginPosition);
     Triangle triDetection(quadDetection.p0.asPoint(), quadDetection.p1.asPoint(), quadDetection.p2.asPoint());
     bool detected = player.detection.movedBy(0, player.rightwardFlag ? 16 : 0).intersects(triDetection);
     Vec2 mapPos = Vec2(
-        mapTip.mapGridX - screenOriginPosition.x,
-        mapTip.mapGridY - screenOriginPosition.y);
+        mapTip.mapGrid.x - screenOriginPosition.x,
+        mapTip.mapGrid.y - screenOriginPosition.y);
     if (detected) {
         player.isSlope = true;
         Line left = player.detection.left();

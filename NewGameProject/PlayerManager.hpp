@@ -46,4 +46,7 @@ public:
     void LeftwardDash(Player& player, TimeManager& timeManager);
     void ClearDash(Player& player, TimeManager& timeManager);
     void FixedDash(Player& player, TimeManager& timeManager, bool rightwardFlag);
+    void BalletActionStart(Player& player, BulletMode bulletMode, BulletName bulletName,
+        Stopwatch& motioningSw);
+    void BalletActionEnd(Player& player, Stopwatch& motioningSw, Stopwatch& coolSw);
 };

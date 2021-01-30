@@ -5,6 +5,8 @@
 
 class EnemyManager {
 public:
-	static void Action(GameObj &objManager);
-	static void Draw(EnemyAnimeManager &eaManager, GameObj& gameObj, Player player);
+	void Action(GameObj &objManager, Player& player);
+	void Draw(EnemyAnimeManager &eaManager, GameObj& gameObj, Player player);
+	void CollideToPlayer(Player &player, Enemy &enemy);
+	bool IsHitRight(double hittingX, double hitX);
 };

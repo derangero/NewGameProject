@@ -29,10 +29,10 @@ Vec2 MapScreenHelper::GetScreenOriginPosition(Vec2 pos) {
     return screenOriginPosition;
 };
 
-Vec2 MapScreenHelper::MoveMapObject(Vec2 pos, Array<MapObjectTip>& mapTips)
+Vec2 MapScreenHelper::MoveMapObject(Vec2 pos, Array<ObjectTip>& mapTips)
 {
     Vec2 screenOriginPosition = GetScreenOriginPosition(pos);
-    for (auto i : step(mapTips.size())) {
+    for (auto mapTip : mapTips) {
         //mapTips[i].detection.movedBy(-screenOriginPosition);
     }
     return screenOriginPosition;

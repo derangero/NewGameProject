@@ -5,10 +5,10 @@ BulletManager::BulletManager(Bullet bullet)
 {
 }
 
-void BulletManager::ActionWarpBullet(Array<Bullet>& bullets, Player& player, Array<MapTip>& mapTips)
+void BulletManager::ControlWarpBullet(Array<Bullet>& bullets, Player& player, Array<MapTip>& mapTips)
 {
 	for (Bullet& bullet : bullets) {
-		if (bullet.name != BulletName::WARP) {
+		if (bullet.bulletName != BulletName::WARP) {
 			continue;
 		}
 		// TODO:Debug
@@ -47,38 +47,74 @@ void BulletManager::ActionWarpBullet(Array<Bullet>& bullets, Player& player, Arr
 	}
 }
 
-void BulletManager::ActionBullet_1(Array<Bullet>& bullets, Player& player, Array<MapTip>& mapTips, TimeManager& timeMngr)
+void BulletManager::ControlBullet(Array<Bullet>& bullets, Player& player, Array<MapTip>& mapTips, TimeManager& timeMngr)
 {
-	player.font(U"isShooted:", player.isShooted).draw(0, 210);
 	// オブジェクトのライフサイクルを管理
 	for (Bullet& bullet : bullets) {
-		if (bullet.owner != U"player" || bullet.name != player.bulletName || !player.isShooted) {
+		// Enemyのバレットもあるので
+		if (bullet.owner != U"player") {
 			continue;
 		}
+		// バレットが必要な場合、存在フラグをTrueにしてGET
 		if (!bullet.isExists) {
-			bullet.isExists = true;
-			player.isShooted = false;
-			break;
+			if (player.isShooted && player.bulletName == bullet.bulletName) {
+				bullet.isExists = true;
+				player.isShooted = false;
+				break;
+			} else {
+				ClearBullet(bullet, player, timeMngr);
+			}
 		}
 	}
 	// 本処理
 	for (Bullet& bullet : bullets) {
-		if (bullet.owner != U"player" || bullet.name != player.bulletName || !bullet.isExists) {
+		if (bullet.owner != U"player" || bullet.bulletName == BulletName::WARP) {
 			continue;
 		}
-		if (IsCollisionDetected(bullet, player, mapTips)) {
-			ClearBullet(bullet, timeMngr);
-			bullet.isHit = false;
-			return;
-		}
-		bullet.Update(player.pos, player.detection);
-		bullet.Draw(player.pos, player.detection, bullet.name, player.allImage,
-			player.spriteImageMetaDataMap, timeMngr);
+		if (bullet.isExists) {
+			if (IsCollisionDetected(bullet, player, mapTips) || IsOutOfFrame(bullet, player)) {
+				ClearBullet(bullet, player, timeMngr);
+				bullet.isHit = false;
+				return;
+			}
+			bullet.Update(player.pos, player.detection);
+			bullet.Draw(player.pos, player.detection, bullet.bulletName, player.allImage,
+				player.spriteImageMetaDataMap, timeMngr);
 
-		if (IsOutRange(bullet)) {
-			ClearBullet(bullet, timeMngr);
+			if (IsOutRange(bullet)) {
+				// TODO:一旦保留
+				//ClearBullet(bullet, timeMngr);
+			}
 		}
 	}
+}
+
+bool BulletManager::IsOutOfFrame(Bullet &bullet, Player &player)
+{
+	if (Direction::RIGHT == bullet.direction) {
+		if (player.IsMovingRightInFrame(player.pos)) { // カメラが移動しているかどうか
+			// カメラが移動していたら、移動分を枠端の位置に加える
+			return bullet.pos.x > (Scene::Size().x + (player.pos.x - PLAYER_STAND_POS.x));
+		}
+		else if (PLAYER_STAND_POS.x >= player.pos.x) {
+			return bullet.pos.x > Scene::Size().x;
+		}
+		else if (PLAYER_RIGHT_END_POS.x <= player.pos.x) {
+			return bullet.pos.x > 1200; // TODO:保留
+		}
+	}
+	else if (Direction::LEFT == bullet.direction) {
+		if (player.IsMovingRightInFrame(player.pos)) {
+			return bullet.pos.x < (player.pos.x - PLAYER_STAND_POS.x);
+		}
+		else if (PLAYER_STAND_POS.x >= player.pos.x) { // 左端、カメラ固定
+			return bullet.pos.x < 0.0;
+		}
+		else if (player.pos.x >= PLAYER_RIGHT_END_POS.x) { // 右端、カメラ固定
+			return bullet.pos.x < (800 - (player.pos.x - PLAYER_RIGHT_END_POS.x));
+		}
+	}
+	return false;
 }
 
 void BulletManager::BulletHit(Player& player, Array<Enemy>& enemies, Array<Bullet>& bullets, Array<MapTip>& mapTips, Font font, TimeManager& timeMngr)
@@ -87,17 +123,18 @@ void BulletManager::BulletHit(Player& player, Array<Enemy>& enemies, Array<Bulle
 		if (playerBullet.owner != U"player") {
 			continue;
 		}
+		//TODO:デバッグ用
+		if (playerBullet.isExists) {
+			playerBullet.hitBox.draw(Palette::White);
+		}
+
 		for (Enemy& enemy : enemies) {
 			if (enemy.hitBox.intersects(playerBullet.hitBox) && !enemy.isInvisible && playerBullet.isExists) {
 				enemy.OnDamage(playerBullet.damage, false);
 				font(playerBullet.damage).draw(enemy.playerPos.movedBy(0, -60));
 				player.isAttack1 = true;
 				playerBullet.isExists = false;
-				timeMngr.bulletAttack1Cool.reset();
-			}
-			if (enemy.hitBox.intersects(player.detection)) {
-				bool isRightHit = IsHitRight(enemy.hitBox.x, player.detection.center().x);
-				player.OnDamage(ENEMY_HITBOX_DAMAGE, isRightHit);
+				//timeMngr.bulletAttack1Cool.reset();
 			}
 		}
 	}
@@ -159,7 +196,7 @@ void BulletManager::ClearBullet(Bullet &bullet) {
 	bullet.ClearPos();
 }
 
-void BulletManager::ClearBullet(Bullet &bullet, TimeManager& timeMngr) {
+void BulletManager::ClearBullet(Bullet &bullet, Player &player, TimeManager& timeMngr) {
 	bullet.isExists = false;
 	bullet.ClearPos();
 	timeMngr.bulletAttack1Cool.reset();

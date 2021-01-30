@@ -14,13 +14,13 @@ public:
 	Texture bulletImage;
 	Array<Enemy> enemies;
 	Array<Bullet> bullets;
-	Array<MapTip> mapTips;
 	Font font;
 	Font smallFont;
-	GameObj();
+	MapCreator &mapCreator;
+	GameObj(MapCreator &mapCreator, std::unordered_map<int, SpriteImageMetaData> spriteImageMetaDataMap);
 	void DisplayAnimeTypeForDebug(Vec2 displayPos);
 	void Init(Player& player);
 	void CreateEnemies();
-	void SelectEnemyImage(Enemy& enemy, double w, double h, Texture eye, Texture hamburg);
+	Texture SelectEnemyImage(Enemy& enemy, double w, double h, Texture eye, Texture hamburg, Texture gob, Texture skull);
 	void BulletAction(Player& _player, GameObj& gameObj, TimeManager& timeMngr);
 };
