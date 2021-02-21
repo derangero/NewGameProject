@@ -39,4 +39,5 @@ public:
     void UpdateByAttack2Cool(Player& player);
     void UpdateByAttack3Cool(Player& player);
     static bool IsOverWaitTime(TimeManager& timeManager, double time);
+    void IncrementNumberByRepeat(int& number, const int max, const double interval, Stopwatch& sw);
 };

@@ -63,3 +63,15 @@ bool TimeManager::IsOverWaitTime(TimeManager& timeManager, double time)
     }
     return false;
 }
+
+void TimeManager::IncrementNumberByRepeat(int &number, const int max, const double interval, Stopwatch &sw)
+{
+    sw.start();
+    if (sw.sF() >= interval) {
+        number++;
+        if (number > max) {
+            number = 0;
+        }
+        sw.reset();
+    }
+}

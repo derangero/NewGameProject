@@ -1,7 +1,7 @@
 #include "Player.hpp"
 
 Player::Player() :
-		jumpMode(UP),
+		gameFinished(false),
 		shortJumpIndex(0),
 		waitCount(0),
 		tempXBeforDash(0.0),
@@ -9,14 +9,7 @@ Player::Player() :
 		walkFlag(false),
 		crouchFlag(false),
 		jumpFlag(false),
-		jumpFallFlag(false),
 		dashFlag(false),
-		afterDashFlag(false),
-		leftWallFlag(false),
-		rightWallFlag(false),
-		topWallFlag(false),
-		naturalFallFlag(true),
-		topWallFlag2(false),
 		attack1Number(0),
 		waitFlag(false),
 		rememberYForSlope(0.0),
@@ -25,9 +18,20 @@ Player::Player() :
 		isSlopeUp(false),
 		isShooted(false),
 		radderMode(RadderMode::NONE),
-		detection(RectF(PLAYER_STAND_POS.x, PLAYER_STAND_POS.y, PLAYER_DETEC_W, PLAYER_DETEC_H)),// x軸をずらす
 		attackNumbers({ 0, 0, 0, 0 })
 {
+	this->charaType = CharaType::PLAYER;
+	this->jumpMode = JumpMode::UP;
+	this->jumpFallFlag = false;
+	this->afterDashFlag = false;
+	this->wallTipTouching != MapTipTouching::NONE;
+	this->objectTipTouching != MapTipTouching::NONE;
+	this->topWallFlag = false;
+	this->charaFallMode = CharaFallMode::NATURAL_FALL;
+	this->topWallFlag2 = false;
+	// x軸をずらす
+	this->hitBox = RectF(PLAYER_STAND_POS.x, PLAYER_STAND_POS.y, PLAYER_DETEC_W, PLAYER_DETEC_H);
+	this->jumpHeight = PLAYER_JUMP_HEIGHT;
 	this->allImage = Texture(U"image/LaraCroft.png");
 	this->pos = Vec2(PLAYER_STAND_POS.x, PLAYER_STAND_POS.y);
 	this->hp = PLAYER_HP;
@@ -90,11 +94,11 @@ void Player::InitDetection()
 	double y = MapScreenHelper::IsMoveCameraY(pos.y) ? PLAYER_STAND_POS.y : pos.y;
 	if (!crouchFlag) {
 		RectF playerRect(x, y, PLAYER_DETEC_W, PLAYER_DETEC_H); // x軸をずらす
-		detection = playerRect;
+		hitBox = playerRect;
 	}
 	else {
 		RectF playerRect(x, y - 0, PLAYER_DETEC_W, PLAYER_CROUCH_DETEC_H); // x軸をずらす
-		detection = playerRect;
+		hitBox = playerRect;
 	}
 }
 
@@ -105,22 +109,22 @@ void Player::InitDetection()
 void Player::MoveX(double moveAmt)
 {
 	pos.x = pos.x + moveAmt;
-	detection.x = MapScreenHelper::IsMoveCameraX(pos.x)
+	hitBox.x = MapScreenHelper::IsMoveCameraX(pos.x)
 		? PLAYER_STAND_POS.x
-		: detection.x + moveAmt;
+		: hitBox.x + moveAmt;
 }
 
 void Player::MoveY(double moveAmt)
 {
 	pos.y = pos.y + moveAmt;
-	detection.y = MapScreenHelper::IsMoveCameraY(pos.y)
+	hitBox.y = MapScreenHelper::IsMoveCameraY(pos.y)
 		// （こういうことをする理由）
 		// カメラを動かす→マップを動かすので当たり判定を
 		// 固定しないといけないから
 		// 反対にカメラを固定するときはキャラを動かすので
 		// 当たり判定を動かす
 		? PLAYER_STAND_POS.y 
-		: detection.y + moveAmt;
+		: hitBox.y + moveAmt;
 }
 /// <summary>
 /// プレイヤーのX軸を変更します。
@@ -129,7 +133,7 @@ void Player::MoveY(double moveAmt)
 void Player::ReplaceX(double replaceXPos)
 {
 	pos.x = replaceXPos;
-	detection.x = MapScreenHelper::IsMoveCameraX(replaceXPos)
+	hitBox.x = MapScreenHelper::IsMoveCameraX(replaceXPos)
 			? PLAYER_STAND_POS.x
 			: replaceXPos;
 }
@@ -137,7 +141,7 @@ void Player::ReplaceX(double replaceXPos)
 void Player::ReplaceY(double replaceYPos)
 {
 	pos.y = replaceYPos;
-	detection.y = MapScreenHelper::IsMoveCameraY(replaceYPos)
+	hitBox.y = MapScreenHelper::IsMoveCameraY(replaceYPos)
 		? PLAYER_STAND_POS.y
 		: replaceYPos;
 }
@@ -153,13 +157,14 @@ void Player::OnDamage(int damage, bool isRightHit)
 		return;
 	}
 	hp -= damage;
+	damaged += damage;
 	//TODO: SE鳴らす
 	if (hp <= 0) {
 		actionState = CharaActionState::DOWN;
 		jumpFallFlag = false;
-		naturalFallFlag = false;
+		charaFallMode = CharaFallMode::NONE;
 		isExists = false;
-		detection = Rect();
+		hitBox = Rect();
 		SpriteImageMetaData& icData(spriteImageMetaDataMap[(int)PlayerAnimeType::DOWN]);
 		imageNumber = icData.maxImageNumber; // スプライトを逆順で表示するので
 	}
@@ -181,19 +186,19 @@ Vec2 Player::GetDetectionPos(HitBoxDetection hitBoxDetection)
 {
 	switch (hitBoxDetection) {
 	case HitBoxDetection::TOP_BEGIN:
-		return detection.top().begin;
+		return hitBox.top().begin;
 	case HitBoxDetection::BOTTOM_BEGIN:
-		return detection.bottom().begin;
+		return hitBox.bottom().begin;
 	case HitBoxDetection::BOTTOM_END:
-		return detection.bottom().end;
+		return hitBox.bottom().end;
 	}
 }
 
 Vec2 Player::GetFootPos()
 {
-	Vec2 topBegin = detection.top().begin;
-	Vec2 bottomBegin = detection.bottom().begin;
-	Vec2 bottomEnd = detection.bottom().end;
+	Vec2 topBegin = hitBox.top().begin;
+	Vec2 bottomBegin = hitBox.bottom().begin;
+	Vec2 bottomEnd = hitBox.bottom().end;
 	// 一点情報が必要-> 戻り値ありのメンバ関数にする
 	double centerX = (bottomEnd.x + bottomBegin.x) / 2;
 	Vec2 centerBottomBegin = Vec2(centerX, topBegin.y);
@@ -201,9 +206,21 @@ Vec2 Player::GetFootPos()
 	return vertical;
 }
 
-bool Player::isFallOff()
+bool Player::IsFallOff()
 {
-	return detection.top().begin.y > Scene::Size().y;
+	return hitBox.top().begin.y > Scene::Size().y;
+}
+
+bool Player::GetCoin(MapTip &objectTip)
+{
+	if (objectTip.isExists && MapType::COIN == objectTip.mapType) {
+		objectTip.isExists = false;
+		objectTip.collision = RectF();
+		coinCount += 1;
+		return true;
+		// TODO:サウンド
+	}
+	return false;
 }
 
 void Player::Debug(Font font)
@@ -221,6 +238,15 @@ void Player::Debug(Font font)
 	font(U"TopY:", topBegin.y).draw(0, 40);
 	font(U"FootX:", bottomBegin.x).draw(0, 60);
 	font(U"FootY:", bottomBegin.y).draw(0, 80);
+	String CharaFallDisplay = U"NONE";
+	if (CharaFallMode::NATURAL_FALL == charaFallMode) {
+		CharaFallDisplay = U"NATURAL_FALL";
+	}
+	else if (CharaFallMode::BROW_UP_A == charaFallMode) {
+		CharaFallDisplay = U"BROW_UP_A";
+	}
+	font(U"CharaFall:", CharaFallDisplay).draw(0, 100);
+	font(U"time:", time).draw(0, 120);
 	Line(bottomBegin, bottomEnd).draw(Palette::Red); // 横線
 	Line(centerBottomBegin, vertical).draw(Palette::Red); // 縦線
 
@@ -248,7 +274,7 @@ void Player::Debug(Font font)
 }
 
 void Player::DrawDetection() {
-	detection.draw(ColorF(1.0, 1.0, 1.0, 0.2));
+	hitBox.draw(ColorF(1.0, 1.0, 1.0, 0.2));
 }
 
 /// <summary>

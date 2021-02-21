@@ -113,18 +113,21 @@
     <ClCompile Include="AnimationBean.cpp" />
     <ClCompile Include="BulletData.cpp" />
     <ClCompile Include="Character.cpp" />
+    <ClCompile Include="EffectMetaData.cpp" />
+    <ClCompile Include="GameEffect.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EnemyAnimeManager.cpp" />
     <ClCompile Include="EnemyManager.cpp" />
+    <ClCompile Include="GameEffectManager.cpp" />
     <ClCompile Include="GameObj.cpp" />
-    <ClCompile Include="GameOverManager.cpp" />
+    <ClCompile Include="GameEndManager.cpp" />
     <ClCompile Include="SpriteImageMetaData.cpp" />
     <ClCompile Include="MapTip.cpp" />
     <ClCompile Include="Object.cpp" />
-    <ClCompile Include="ObjectCollisionDetection.cpp" />
+    <ClCompile Include="ObjectCollisionHelper.cpp" />
     <ClCompile Include="BulletManager.cpp" />
     <ClCompile Include="ObjectTip.cpp" />
-    <ClCompile Include="MapCollisionDetection.cpp" />
+    <ClCompile Include="MapCollisionHelper.cpp" />
     <ClCompile Include="PlayerAnimeManager.cpp" />
     <ClCompile Include="CalcHelper.cpp" />
     <ClCompile Include="GameSprite.cpp" />
@@ -262,7 +265,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GameOverManager.hpp" />
+    <ClInclude Include="EffectMetaData.hpp" />
+    <ClInclude Include="EffectProperty.hpp" />
+    <ClInclude Include="GameEffect.hpp" />
+    <ClInclude Include="GameEffectManager.hpp" />
+    <ClInclude Include="GameEndManager.hpp" />
     <ClInclude Include="PlayerManager.hpp" />
     <ClInclude Include="AfterImage.hpp" />
     <ClInclude Include="Animation.hpp" />
@@ -280,10 +287,10 @@
     <ClInclude Include="MapProperty.hpp" />
     <ClInclude Include="MapTip.hpp" />
     <ClInclude Include="Object.hpp" />
-    <ClInclude Include="ObjectCollisionDetection.hpp" />
+    <ClInclude Include="ObjectCollisionHelper.hpp" />
     <ClInclude Include="BulletManager.hpp" />
     <ClInclude Include="ObjectTip.hpp" />
-    <ClInclude Include="MapCollisionDetection.hpp" />
+    <ClInclude Include="MapCollisionHelper.hpp" />
     <ClInclude Include="PlayerAnimeManager.hpp" />
     <ClInclude Include="CalcHelper.hpp" />
     <ClInclude Include="GameSprite.hpp" />

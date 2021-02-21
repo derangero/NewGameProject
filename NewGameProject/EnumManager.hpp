@@ -1,21 +1,58 @@
 #pragma once
-enum JumpMode
+
+enum class TipMovingBy
 {
+	NONE,
+	RIGHT,
+	LEFT
+};
+enum class JumpMode
+{
+	NONE,
 	UP,
 	FALL
 };
 
-enum Direction
+enum class CharaFallMode
 {
+	// 落下なし
+	NONE,
+	// 自由落下
+	NATURAL_FALL,
+	// ジャンプ後の落下
+	JUMP_FALL,
+	// 浮遊
+	BROW_UP_A
+};
+
+enum class MapTipTouching
+{
+	NONE,
 	TOP,
 	RIGHT,
 	BOTTOM,
 	LEFT
 };
 
-enum MapObjectType
+enum class CharaType
+{
+	PLAYER,
+	NORMAL_ENEMY,
+	BOSS_ENEMY
+};
+
+enum class Direction
 {
 	NONE,
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT
+};
+
+enum class MapType
+{
+	NORMAL,
 	// 梯子
 	UPPERMOST,
 	LADDER,
@@ -25,14 +62,27 @@ enum MapObjectType
 	//スロープ
 	RIGHT_SLOPE,
 	RIGHT_SLOPE_UP,
-	// 草A
-	GRASS_A
+	// コイン
+	COIN,
+	// 鍵
+	KEY,
+	// ジャンプ台
+	AIR_BROW_UP,
+	// 動く床
+	MOVE_FLOOR_A,
+	// ダメージ床
+	DAMAGE_FLOOR_A,
+	// 敵のジャンプ床
+	ENEMY_WAIT_A,
+	// 動くオブジェクト
+	MOVABLE_OBJ_A
 };
 
 enum class RadderMode
 {
 	NONE,
-	GRABBED,
+	FIRST_TOUCH,
+	GRABBING,
 	RELEASE
 };
 
@@ -103,6 +153,12 @@ enum class BulletName
 	ATTACK_3
 };
 
+enum class OnFloorType
+{
+	NORMAL,
+	MOVING
+};
+
 // スプライト画像の縦番に対応
 enum class PlayerAnimeType
 {
@@ -139,6 +195,7 @@ enum class EnemyAnimeType
 
 enum class AfterOnDamage
 {
+	NON,
 	WAIT,
 	MOVE,
 	RUN_OUT
@@ -150,3 +207,24 @@ enum class EnemyAttackType
 	LONG_RANGE,
 	CLOSE_RANGE
 };
+
+/// <summary>
+/// ダメージを受けた際の挙動を管理するEnumクラス
+/// </summary>
+enum class ArmorClass
+{
+	// 常に被ダメモーションに入る
+	NORMAL,
+	// 攻撃中に被ダメモーションに入らない
+	SUPER,
+	// 被ダメモーションに入らない
+	HYPER
+};
+
+enum class EffectType
+{
+	NONE,
+	STAR_BURST_1,
+	STAR_TRAILS_1
+};
+

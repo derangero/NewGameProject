@@ -2,31 +2,36 @@
 #include "EnemyAnimeManager.hpp"
 
 Enemy::Enemy() :
-	imageNumber(0),
 	moveAmt(0.0),
 	velocity(1.0),
 	scoutingRange(0),
 	closeScoutingRange(0),
+	randomJumpChance(0.0),
+	jumpMode(JumpMode::NONE),
 	animeType(EnemyAnimeType::WALK),
 	beforeAnimeType(EnemyAnimeType::WALK)
-{}
+{
+	this->charaType = CharaType::NORMAL_ENEMY;
+	this->imageNumber = 0;
+}
 
 void Enemy::Init(Font font)
 {
+	beforePos = pos;
 }
 
 void Enemy::KnockBack()
 {
 }
 
-void Enemy::InitEnemies(Array<Enemy>& _enemies, Vec2 playerPos, RectF playerHitBox, Font font)
+void Enemy::InitEnemies(Array<Enemy>& _enemies, Vec2 playerPos, RectF hitBox, Font font)
 {
 	for (Enemy& enemy : _enemies) {
 		if (!enemy.isExists) {
 			enemy.pos = Vec2(0, 0);
 			continue;
 		}
-		InitEnemy(enemy, playerPos, playerHitBox, font);
+		InitEnemy(enemy, playerPos, hitBox, font);
 	}
 }
 
@@ -58,14 +63,20 @@ void Enemy::State()
 		default:
 			break;
 		}
+		isOnDamage = false;
 		waitSw.reset();
 	}
-	else if (CharaActionState::DOWN == actionState && waitSw.sF() > 1.0) {
+	else if (CharaActionState::DOWN == actionState && waitSw.sF() > ENEMY_DOWN_REMAINNING_TIME) {
 		actionState = CharaActionState::WAIT;
 		animeType = EnemyAnimeType::WAIT;
 		imageNumber = 0;
-		waitSw.reset();
 		isExists = false;
+		isOnDamage = false;
+		waitSw.reset();
+	}
+	else if (isOnDamage && waitSw.sF() > 1.0) {
+		isOnDamage = false;
+		waitSw.reset();
 	}
 }
 
@@ -80,12 +91,24 @@ void Enemy::EnemyAction(Array<Bullet>& bullets, Font font)
 	State();
 	Move();
 	Attack(bullets);
+	// ジャンプする
+	if (animeType != EnemyAnimeType::DOWN && animeType != EnemyAnimeType::ON_DAMAGE
+			&& static_cast<int>(EnemyType::HAMBURG) == type) {
+		if (jumpMode == JumpMode::NONE && RandomBool(randomJumpChance)) {
+			jumpMode = JumpMode::UP;
+			beforePos = pos;
+		}
+		if (jumpMode == JumpMode::UP) {
+			MoveY(-5.0 + gravity.y);
+			UpdateHitBox();
+			gravity.y += 0.2;
+		}
+	}
 }
 
 void Enemy::OnDamage(int damage, bool isRightHit)
 {
 	hp -= damage;
-	//TODO: SE鳴らす
 	waitSw.start();
 	if (hp <= 0) {
 		actionState = CharaActionState::DOWN;
@@ -93,10 +116,16 @@ void Enemy::OnDamage(int damage, bool isRightHit)
 		imageNumber = 0;
 	}
 	else {
-		actionState = CharaActionState::ON_DAMAGE;
-		animeType = EnemyAnimeType::ON_DAMAGE;
-		imageNumber = 0;
+		isOnDamage = true;
+		if (ArmorClass::NORMAL == armorClass
+			 || (ArmorClass::SUPER == armorClass
+					&& CharaActionState::ATTACK != actionState)) {
+			actionState = CharaActionState::ON_DAMAGE;
+			animeType = EnemyAnimeType::ON_DAMAGE;
+			imageNumber = 0;
+		}
 	}
+	//TODO: SE鳴らす
 }
 
 void Enemy::Move()
@@ -128,18 +157,33 @@ void Enemy::CloseRangeAttack()
 		return;
 	}
 }
+void Enemy::ClearHitBox(Array<Bullet>& bullets)
+{
+	for (Bullet& bullet : bullets) {
+		if (bullet.owner == name) {
+			bullet.hitBox = RectF();
+			bullet.isExists = false;
+		}
+	}
+}
 
 void Enemy::Attack(Array<Bullet>& bullets)
 {
-	if (U"gob" == name) {
-		int a = 0;
+	if (!isExists || CharaActionState::DOWN == actionState) {
+		ClearHitBox(bullets);
+		return;
+	}
+	if (ArmorClass::NORMAL == armorClass || ArmorClass::SUPER == armorClass) {
+		if (CharaActionState::ON_DAMAGE == actionState) {
+			return;
+		}
 	}
 	SpriteImageMetaData simData = spriteImageMetaDataMap[static_cast<int>(animeType)];
 	if (HasDetectedPlayer(scoutingRangeArea)) {
-		if (attackType == EnemyAttackType::CLOSE_RANGE) {
+		if (EnemyAttackType::CLOSE_RANGE == attackType) {
 			attackState = CharaAttackState::CHASE_ATTACK_A;
 		}
-		else if (attackType == EnemyAttackType::LONG_RANGE) {
+		else if (EnemyAttackType::LONG_RANGE == attackType) {
 			attackState = CharaAttackState::ATTACK_A;
 			animeType = EnemyAnimeType::ATTACK1;
 		}
@@ -283,6 +327,7 @@ void Enemy::MoveX(double moveAmt)
 
 void Enemy::MoveY(double moveAmt)
 {
+	pos.y = pos.y + moveAmt;
 }
 
 void Enemy::UpdateHitBox() {
@@ -301,18 +346,16 @@ void Enemy::UpdateHitBox(bool _isExists, CharaActionState _actionState, RectF &_
 	std::unordered_map<int, SpriteImageMetaData> _spriteImageMetaDataMap, Vec2 _pos, Vec2 _playerPos, EnemyAnimeType _animeType,
 	int _imageNumber, int _scoutingRange, int _closeScoutingRange, bool _rightwardFlag, String _name)
 {
+	_ASSERT_EXPR(_spriteImageMetaDataMap.contains(static_cast<int>(_animeType)), U"エラー:Enemy.cpp UpdateHitBox priteImageMetaDataMap");
 	if (!_isExists || CharaActionState::DOWN == _actionState) {
 		_hitBox.pos = Vec2::Zero();
 		_scoutingRangeArea = RectF();
 		_closeScoutingRangeArea = RectF();
 		return;
 	}
+
 	Vec2 screenOriginPosition2(MapScreenHelper::ChangeWorldToScreenPos(_pos));
 	Vec2 enemyPos = MapScreenHelper::FixPositionFromPlayerPos(_playerPos, _pos.movedBy(0, -screenOriginPosition2.y));
-	if (!_spriteImageMetaDataMap.contains(static_cast<int>(_animeType)))
-	{
-		throw Error(U"エラー:Enemy.cpp UpdateHitBox priteImageMetaDataMap");
-	}
 	SpriteImageMetaData metaData = _spriteImageMetaDataMap[static_cast<int>(_animeType)];
 	Size size = metaData.sizes[_imageNumber];
 	double extendX = 0.0;
@@ -340,15 +383,18 @@ void Enemy::UpdateHitBox(bool _isExists, CharaActionState _actionState, RectF &_
 		_closeScoutingRangeArea = RectF(Vec2(fixedX, fixedY).movedBy(-closeW, 0), closeW, h);
 	}
 	if (IsOutOfFrame(_hitBox, _playerPos, _pos)) {
-		_hitBox.pos = Vec2::Zero();
+		if (name == U"gob") {
+			int i = 0;
+		}
+		//_hitBox.pos = Vec2::Zero();
 	}
 }
 
-bool Enemy::IsOutOfFrame(RectF hitBox, Vec2 playerPos, Vec2 enemyPos)
+bool Enemy::IsOutOfFrame(RectF hitBox, Vec2 playerPos, Vec2 targetPos)
 {
 	double leftX = hitBox.left().begin.x;
 	double rightX = hitBox.right().begin.x;
-	if (playerPos.x < enemyPos.x) {
+	if (playerPos.x < targetPos.x) {
 		//　敵の位置がプレイヤーより右側
 		if (IsMovingRightInFrame(playerPos)) {
 			double movingRight = playerPos.x - PLAYER_STAND_POS.x;
@@ -363,4 +409,33 @@ bool Enemy::IsOutOfFrame(RectF hitBox, Vec2 playerPos, Vec2 enemyPos)
 		double leftFrame = playerPos.x - PLAYER_STAND_POS.x;
 		return rightX < 0;
 	}
+	return false;
 }
+
+void Enemy::ReplaceY(double replaceYPos)
+{
+	pos.y = replaceYPos;
+	UpdateHitBox();
+}
+
+void Enemy::ReplaceX(double replaceXPos)
+{
+	pos.x = replaceXPos;
+	UpdateHitBox();
+}
+
+/// <summary>
+/// 着地した時の処理です
+/// </summary>
+/// <param name="timeManager"></param>
+//void Enemy::Landing(TimeManager& timeManager) {
+//	if (jumpMode == JumpMode::FALL && NaturalFallMode::NONE == charaFallMode) {
+//		ReplaceY(ground);
+//		player.time = 0.0;
+//		player.shortJumpIndex = 0;
+//		player.jumpFlameCount = 0;
+//		player.jumpMode = JumpMode::UP;
+//		player.jumpFlag = false;
+//		player.jumpFallFlag = false;
+//	}
+//}

@@ -141,7 +141,7 @@ static Array<Vec2> PLAYER_DOWN_SPRITE_FIX_VEC2_ARRAY = {
 constexpr auto PLAYER_DOWN_SLOW_FOLD = 3.0;
 
 // プレイヤーのHP
-constexpr auto PLAYER_HP = 10;
+constexpr auto PLAYER_HP = 3;
 // プレイヤーのひん死HP
 constexpr auto PLAYER_DANGER_HP = 2;
 // プレイヤーの位置(X)
@@ -244,3 +244,8 @@ constexpr auto ENEMY_HITBOX_DAMAGE = 1;
 
 // 敵ヒットボックスのサイズ調整用
 constexpr auto RESIZED_ENEMY_HITBOXES = Vec2(5, 5);
+
+// 敵ダウン時のアニメーション持続時間
+constexpr auto ENEMY_DOWN_REMAINNING_TIME = 1.0;
+
+constexpr auto OBJ_VELOCITY = 5.0;

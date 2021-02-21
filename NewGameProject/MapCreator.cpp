@@ -2,8 +2,19 @@
 #include "MapTip.hpp"
 #include "ObjectTip.hpp"
 
-MapCreator::MapCreator(Texture mapTexture)
+MapCreator::MapCreator(Texture mapTexture) :
+    getAllCoin(false),
+    keyAppearance(false),
+    backGround_0(U"image/backGround/background_0.png"),
+    backGround_1(U"image/backGround/background_1.png"),
+    backGround_2(U"image/backGround/background_2.png"),
+    objectSprite(Texture(U"image/objectSprite.png"))
 {
+    for (MapType mapType : { MapType::COIN })
+    {
+        objectImageNumberMap[static_cast<int>(mapType)] = 0;
+        objectStopWatchMap[static_cast<int>(mapType)] = Stopwatch();
+    }
     CreateMapTips(mapTexture);
     CreateObjectTip();
 }
@@ -27,7 +38,7 @@ void MapCreator::CreateMapTips(Texture mapTexture)
                 double mapGridX = x * MAP_IMAGE_SQUARE_SIZE;
                 double mapGridY = y * MAP_IMAGE_SQUARE_SIZE;
                 mapTip.mapGrid = Vec2(mapGridX, mapGridY);
-                mapTip.detection = !IsNoCollision(imageNumber)
+                mapTip.collision = !IsNoCollision(imageNumber)
                      ? RectF(x * MAP_IMAGE_SQUARE_SIZE, y * MAP_IMAGE_SQUARE_SIZE, MAP_IMAGE_SQUARE_SIZE)
                      : RectF(0, 0, 0);
                 this->mapTips.push_back(mapTip);
@@ -97,105 +108,193 @@ Grid<int> MapCreator::CreateMapGrid()
 
 void MapCreator::CreateObjectTip()
 {
-    // TMXファイルからXMLデータを読み込む
     const XMLReader xml(MAP_XML_PATH);
     _ASSERT_EXPR(xml, L"Failed to load `myGameTestMap.xml`");
-    //Array<ObjectTip> objectTips;
+    String jsonURI = U"ini/";
+    JSONReader objectImageJson(jsonURI.append(U"objectImage").append(U".json"));
+    spriteMetaDataMap.merge(SpriteUtil::GetObjectSpriteImageMetaDataMap(objectImageJson, MapType::KEY));
     for (auto elem = xml.firstChild(); elem; elem = elem.nextSibling())
     {
-        // マップオブジェクトを利用する場合、MAP_OBJECT_NAMESにプロパティ名を設定する
-        if (elem.name() == U"objectgroup" && MAP_OBJECT_NAMES.includes(elem.attribute(U"name").value())) {
-            if (elem.attribute(U"name").value() == U"slope") {
-                for (auto elem2 = elem.firstChild(); elem2; elem2 = elem2.nextSibling())
+        if (elem.name() != U"objectgroup") {
+            continue;
+        }
+        auto GetElemValue = [&](String key) {
+            return elem.attribute(key).value();
+        };
+        ObjectTip objectTip;
+        String elemName = GetElemValue(U"name");
+        bool created = false;
+        for (auto elem2 = elem.firstChild(); elem2; elem2 = elem2.nextSibling())
+        {
+            MapType mapType = GetMapType(elem2.attribute(U"type").value());
+            if (MapType::NORMAL == mapType) {
+                continue;
+            }
+            created = CreateEnemy(objectTip, elemName, elem2);
+            created = CreatePieceObject(objectTip, elemName, elem2, mapType);
+            if (!created) {
+                CreateObject(objectTip, elemName, elem2, mapType);
+            }
+            for (auto elem3 = elem2.firstChild(); elem3; elem3 = elem3.nextSibling())
+            {
+                for (auto elem4 = elem3.firstChild(); elem4; elem4 = elem4.nextSibling())
                 {
-                    const int imageNumber = Parse<int>(elem2.attribute(U"name").value());
-                    const String mapObjectType = elem2.attribute(U"type").value();
-                    ObjectTip objectTip;
-                    objectTip.type = GetMapObjectType(mapObjectType);
-                    objectTip.tip = CreateTipPoint(imageNumber);
-                    objectTip.mapGrid = objectTip.GetObjectTipXY(elem2);
-                    objectTip.detection = RectF(objectTip.mapGrid.x - 8, objectTip.mapGrid.y, MAP_IMAGE_SQUARE_SIZE + 16, MAP_IMAGE_SQUARE_SIZE);
-                    Array<Vec2> posList;
-                    for (auto elem3 = elem2.firstChild(); elem3; elem3 = elem3.nextSibling())
-                    {
-                        Array<String> strPolygonPosList = elem3.attribute(U"points").value().split(U' ');
-                        for (auto i : step(strPolygonPosList.size())) {
-                            Array<String> posArray = strPolygonPosList[i].split(U',');
-                            auto x = Parse<double>(posArray[0]) + objectTip.mapGrid.x;
-                            auto y = Parse<double>(posArray[1]) + objectTip.mapGrid.y + OBJECT_FIXED_Y;
-                            posList.push_back(Vec2(x, y));
-                        }
+                    if (elem4.attribute(U"name").value() == U"blockBehave") {
+                        objectTip.blockBehave = Parse<bool>(elem4.attribute(U"value").value());
                     }
-                    if (objectTip.type == RIGHT_SLOPE) {
-                        objectTip.quadDetection = Quad(posList[0].movedBy(0.0, 0.0), posList[1],
-                            posList[2], posList[3]);
-                    }
-
-                    this->objectTips.push_back(objectTip);
                 }
             }
-            else if (elem.attribute(U"name").value() == U"enemiesA") {
-                for (auto elem2 = elem.firstChild(); elem2; elem2 = elem2.nextSibling())
-                {
-                    // TODO:使用するか不明
-                    const String enemyType = elem2.attribute(U"type").value();
-                    ObjectTip objectTip;
-                    objectTip.enemyType = GetEnemyType(enemyType);
-                    objectTip.tip = Point(64, 64);// 最大横幅, 横列の最大数を超えたら折り返す
-                    objectTip.mapGrid = objectTip.GetObjectTipXY(elem2);
-                    objectTip.detection = RectF(objectTip.mapGrid.x - 8, objectTip.mapGrid.y, MAP_IMAGE_SQUARE_SIZE + 16, MAP_IMAGE_SQUARE_SIZE);
-                    this->objectTips.push_back(objectTip);
-                }
-            }
-            else {
-                //TODO: ハシゴ　実装中
-                for (auto elem2 = elem.firstChild(); elem2; elem2 = elem2.nextSibling())
-                {
-                    const String mapObjectType = elem2.attribute(U"type").value();
-                    ObjectTip objectTip;
-                    objectTip.mapNumber = Parse<int>(elem2.attribute(U"gid").value());
-                    objectTip.w = Parse<double>(elem2.attribute(U"width").value());
-                    objectTip.h = Parse<double>(elem2.attribute(U"height").value());
-                    objectTip.type = GetMapObjectType(mapObjectType);
-                    objectTip.tip = CreateTipPoint(objectTip.mapNumber);
-                    objectTip.mapGrid = objectTip.GetObjectTipXY(elem2);
-                    if (objectTip.type == LADDER || objectTip.type == UPPERMOST) {
-                        objectTip.detection = RectF(objectTip.mapGrid.x + 9, objectTip.mapGrid.y, objectTip.w - 20, objectTip.h);
-                    }
-                    else if (objectTip.type == TOP_ROCK) {
-                        objectTip.detection = RectF(objectTip.mapGrid.x, objectTip.mapGrid.y, objectTip.w, objectTip.h);
-                    }
-                    this->objectTips.push_back(objectTip);
-                }
-            }
+            objectTip.id = Parse<long>(elem2.attribute(U"id").value());
+            this->objectTips.push_back(objectTip);
         }
     }
 }
 
-MapObjectType MapCreator::GetMapObjectType(String mapObjectType) {
+bool MapCreator::CreateEnemy(ObjectTip &objectTip, String elemName, XMLElement &elem2)
+{
+    if (elemName != U"enemiesA") {
+        return false;
+    }
+    const String enemyType = elem2.attribute(U"type").value();
+    objectTip = ObjectTip(GetEnemyType(enemyType), Point(64, 64), elem2);
+    return true;
+}
+
+/// <summary>
+/// あたり判定を加工する必要のあるオブジェクトを作成します
+/// </summary>
+/// <param name="objectTip">オブジェクトチップ</param>
+/// <param name="elemName">オブジェクトの名前</param>
+/// <param name="elem2">ネストレベル２のXML</param>
+/// <returns>作成したかどうか</returns>
+bool MapCreator::CreatePieceObject(ObjectTip &objectTip, String elemName, XMLElement &elem2, MapType mapType)
+{
+    if (elemName != U"pieceObject") {
+        return false;
+    }
+    int hitBoxX = 0;
+    int hitBoxY = 0;
+    for (auto elem3 = elem2.firstChild(); elem3; elem3 = elem3.nextSibling())
+    {
+        for (auto elem4 = elem3.firstChild(); elem4; elem4 = elem4.nextSibling())
+        {
+            if (elem4.attribute(U"name").value() == U"hitBoxX") {
+                hitBoxX = Parse<int>(elem4.attribute(U"value").value());
+            }
+            else if (elem4.attribute(U"name").value() == U"hitBoxY") {
+                hitBoxY = Parse<int>(elem4.attribute(U"value").value());
+            }
+        }
+    }
+    objectTip.mapType = mapType;
+    objectTip.tip = Point(hitBoxX, hitBoxY);// 最大横幅, 横列の最大数を超えたら折り返す
+    objectTip.mapGrid = objectTip.GetObjectTipXY(elem2);
+    objectTip.collision = RectF(objectTip.mapGrid.x, objectTip.mapGrid.y, hitBoxX, hitBoxY);
+    return true;
+}
+
+void MapCreator::CreateObject(ObjectTip &objectTip, String elemName, XMLElement &elem2, MapType _mapType)
+{
+    int mapNumber = Parse<int>(elem2.attribute(U"gid").value());
+    auto deltaAmt = 0.0;
+    auto turningMoveAmt = 0.0;
+    String direction = U"";
+    auto damage = 0;
+    double waitTime = 0.0;
+    for (auto elem3 = elem2.firstChild(); elem3; elem3 = elem3.nextSibling())
+    {
+        for (auto elem4 = elem3.firstChild(); elem4; elem4 = elem4.nextSibling())
+        {
+            if (elem4.attribute(U"name").value() == U"deltaAmt") {
+                deltaAmt = Parse<double>(elem4.attribute(U"value").value());
+            }
+            else if (elem4.attribute(U"name").value() == U"turningMoveAmt") {
+                turningMoveAmt = Parse<double>(elem4.attribute(U"value").value());
+            }
+            else if (elem4.attribute(U"name").value() == U"direction") {
+                direction = elem4.attribute(U"value").value();
+            }
+            else if (elem4.attribute(U"name").value() == U"damage") {
+                damage = Parse<int>(elem4.attribute(U"value").value());
+            }
+            else if (elem4.attribute(U"name").value() == U"waitTime") {
+                waitTime = Parse<int>(elem4.attribute(U"value").value());
+            }
+        }
+    }
+    objectTip = ObjectTip(
+        _mapType,
+        mapNumber,
+        Parse<double>(elem2.attribute(U"width").value()),
+        Parse<double>(elem2.attribute(U"height").value()),
+        CreateTipPoint(mapNumber),
+        elem2,
+        deltaAmt,
+        turningMoveAmt,
+        GetDirection(direction),
+        damage,
+        waitTime);
+}
+
+Direction MapCreator::GetDirection(String direction)
+{
+    if (direction == U"UP") {
+        return Direction::UP;
+    }
+    else if (direction == U"DOWN") {
+        return Direction::DOWN;
+    }
+    else if (direction == U"LEFT") {
+        return Direction::LEFT;
+    }
+    else if (direction == U"RIGHT") {
+        return Direction::RIGHT;
+    }
+    return Direction::NONE;
+}
+
+MapType MapCreator::GetMapType(String mapType) {
     // TODO:もっとすっきりしたやり方はないだろうか？
-    if (mapObjectType == U"UPPERMOST") {
-        return UPPERMOST;
+    if (mapType == U"UPPERMOST") {
+        return MapType::UPPERMOST;
     }
-    else if (mapObjectType == U"LADDER") {
-        return LADDER;
+    else if (mapType == U"LADDER") {
+        return MapType::LADDER;
     }
-    else if (mapObjectType == U"LOWERMOST") {
-        return LOWERMOST;
+    else if (mapType == U"LOWERMOST") {
+        return MapType::LOWERMOST;
     }
-    else if (mapObjectType == U"RIGHT_SLOPE") {
-        return RIGHT_SLOPE;
+    else if (mapType == U"RIGHT_SLOPE") {
+        return MapType::RIGHT_SLOPE;
     }
-    else if (mapObjectType == U"RIGHT_SLOPE_UP") {
-        return RIGHT_SLOPE_UP;
+    else if (mapType == U"RIGHT_SLOPE_UP") {
+        return MapType::RIGHT_SLOPE_UP;
     }
-    else if (mapObjectType == U"GRASS_A") {
-        return GRASS_A;
+    else if (mapType == U"TOP_ROCK") {
+        return MapType::TOP_ROCK;
     }
-    else if (mapObjectType == U"TOP_ROCK") {
-        return TOP_ROCK;
+    else if (mapType == U"AIR_BROW_UP") {
+        return MapType::AIR_BROW_UP;
     }
-    return MapObjectType::NONE;
+    else if (mapType == U"MOVE_FLOOR_A") {
+        return MapType::MOVE_FLOOR_A;
+    }
+    else if (mapType == U"DAMAGE_FLOOR_A") {
+        return MapType::DAMAGE_FLOOR_A;
+    }
+    else if (mapType == U"ENEMY_WAIT_A") {
+        return MapType::ENEMY_WAIT_A;
+    }
+    else if (mapType == U"COIN") {
+        return MapType::COIN;
+    }
+    else if (mapType == U"KEY") {
+        return MapType::KEY;
+    }
+    else if (mapType == U"MOVABLE_OBJ_A") {
+        return MapType::MOVABLE_OBJ_A;
+    }
+    return MapType::NORMAL;
 }
 
 EnemyType MapCreator::GetEnemyType(String enemyType) {
@@ -209,26 +308,140 @@ bool MapCreator::IsNoCollision(int imageNumber) {
     return NO_COLLISION_MAP.includes(imageNumber);
 }
 
-void MapCreator::SetObjectTip(Texture allMap, Vec2& screenOriginPosition)
+void MapCreator::DrawBackGround()
 {
-    for (ObjectTip objectTip : objectTips) {
+    DrawBackGround(backGround_0);
+    DrawBackGround(backGround_1);
+    DrawBackGround(backGround_2);
+}
+
+void MapCreator::DrawBackGround(Texture image)
+{
+    image.resized(800, 600).draw(Vec2(0, 0));
+}
+
+double MapCreator::GetObjectMoveXAmt(ObjectTip &objectTip)
+{
+    double deltaXAmt = 0.0;
+    if (Direction::RIGHT == objectTip.direction) {
+        deltaXAmt = objectTip.deltaAmt;
+    }
+    if (Direction::LEFT == objectTip.direction) {
+        deltaXAmt = -(objectTip.deltaAmt);
+    }
+    return deltaXAmt;
+}
+
+double MapCreator::GetObjectMoveYAmt(ObjectTip &objectTip)
+{
+    double deltaYAmt = 0.0;
+    if (Direction::UP == objectTip.direction) {
+        deltaYAmt = -(objectTip.deltaAmt);
+    }
+    if (Direction::DOWN == objectTip.direction) {
+        deltaYAmt = objectTip.deltaAmt;
+    }
+    return deltaYAmt;
+}
+
+void MapCreator::DrawObjectTip(Texture allMap, Vec2& screenOriginPosition, TimeManager timeManager, Player& player)
+{
+    int coinCount = 0;
+    double deltaAmt = 0.0;
+    for (ObjectTip &objectTip : objectTips) {
         //TODO: デバッグ用に当たり判定を可視化(実際の判定はPlayerCollisionDetectionクラスで行う)
         //mapTips[i].detection.movedBy(-screenOriginPosition).draw(ColorF(1.0, 1.0, 1.0, 0));
-        RectF mapDetection = objectTip.detection;
-        TextureRegion tip = allMap(objectTip.tip.x, objectTip.tip.y,
-            MAP_IMAGE_SQUARE_SIZE, MAP_IMAGE_SQUARE_SIZE).resized(objectTip.w, objectTip.h);
+        //RectF mapDetection = objectTip.detection;
         Vec2 mapPos = Vec2(
             objectTip.mapGrid.x - screenOriginPosition.x,
             objectTip.mapGrid.y - screenOriginPosition.y);
+        if (objectTip.mapType == MapType::COIN || objectTip.mapType == MapType::KEY) {
+            SpriteImageMetaData metaData = spriteMetaDataMap[static_cast<int>(objectTip.mapType)];
+            int &objectImageNumber = objectImageNumberMap[static_cast<int>(objectTip.mapType)];
+            Stopwatch &objectStopWatch = objectStopWatchMap[static_cast<int>(objectTip.mapType)];
+            TextureRegion tip = SpriteUtil::ExtractionImage(objectSprite, metaData, objectImageNumber);
+            if (objectTip.mapType == MapType::COIN && objectTip.isExists) {
+                tip.scaled(0.25).draw(mapPos.x, mapPos.y);
+                objectTip.collision = RectF(objectTip.collision.pos, tip.scaled(0.25).size);
+                coinCount += 1;
+            }
+            else if(objectTip.mapType == MapType::KEY) {
+                objectTip.isExists = keyAppearance;
+                if (keyAppearance && !player.gameFinished) {
+                   tip.draw(mapPos.x, mapPos.y);
+                }
+                if (objectTip.isExists) {
+                    objectTip.collision = RectF(keyAppearance
+                            ? objectTip.collision.pos
+                            : Vec2::Zero(),
+                        tip.size);
+                }
+            }
+            timeManager.IncrementNumberByRepeat(objectImageNumber, metaData.maxImageNumber, metaData.interval, objectStopWatch);
+        }
+        else if (MapType::MOVE_FLOOR_A == objectTip.mapType) {
+            double deltaXAmt = GetObjectMoveXAmt(objectTip);
+            double deltaYAmt = GetObjectMoveYAmt(objectTip);
+            objectTip.tip.x += deltaXAmt;
+            objectTip.mapGrid.x += deltaXAmt;
+            objectTip.tip.y += deltaYAmt;
+            objectTip.mapGrid.y += deltaYAmt;
+            TextureRegion tip = allMap(objectTip.tip.x, objectTip.tip.y,
+                MAP_IMAGE_SQUARE_SIZE, MAP_IMAGE_SQUARE_SIZE).resized(objectTip.w, objectTip.h);
+            if (objectTip.quadDetection.p0.x == 0.0) {
+                tip.draw(mapPos.x + objectTip.deltaAmt, mapPos.y);
+            }
+            objectTip.collision.pos.x += deltaXAmt;
+            objectTip.collision.pos.y += deltaYAmt;
+            objectTip.collision = RectF(objectTip.collision.pos , tip.size);
+            objectTip.moveAmt += deltaXAmt + deltaYAmt;
+            if (Direction::RIGHT == objectTip.direction && objectTip.moveAmt > objectTip.turningMoveAmt) {
+                objectTip.direction = Direction::LEFT;
+                objectTip.moveAmt = 0.0;
+            } else if (Direction::LEFT == objectTip.direction && objectTip.moveAmt < -(objectTip.turningMoveAmt)) {
+                objectTip.direction = Direction::RIGHT;
+                objectTip.moveAmt = 0.0;
+            } else if (Direction::UP == objectTip.direction && objectTip.moveAmt < -(objectTip.turningMoveAmt)) {
+                objectTip.direction = Direction::DOWN;
+                objectTip.moveAmt = 0.0;
+            } else if (Direction::DOWN == objectTip.direction && objectTip.moveAmt > objectTip.turningMoveAmt) {
+                objectTip.direction = Direction::UP;
+                objectTip.moveAmt = 0.0;
+            }
+        }
+        else if (MapType::MOVABLE_OBJ_A == objectTip.mapType) {
+            //double deltaXAmt = 0.0;
+            //if (Direction::RIGHT == objectTip.direction) {
+            //    deltaXAmt = objectTip.deltaAmt;
+            //}
+            //else if (Direction::LEFT == objectTip.direction) {
+            //    deltaXAmt = -(objectTip.deltaAmt);
+            //}
+            //objectTip.tip.x += deltaXAmt;
+            //objectTip.mapGrid.x += deltaXAmt;
+            //TextureRegion tip = allMap(objectTip.tip.x, objectTip.tip.y,
+            //    MAP_IMAGE_SQUARE_SIZE, MAP_IMAGE_SQUARE_SIZE).resized(objectTip.w, objectTip.h);
+            //if (objectTip.quadDetection.p0.x == 0.0) {
+            //    tip.draw(mapPos.x + objectTip.deltaAmt, mapPos.y);
+            //}
+            //objectTip.collision.pos.x += deltaXAmt;
+            //objectTip.collision = RectF(objectTip.collision.pos, tip.size);
+            //objectTip.moveAmt += deltaXAmt;
+        }
+        else {
+            TextureRegion tip = allMap(objectTip.tip.x, objectTip.tip.y,
+                MAP_IMAGE_SQUARE_SIZE, MAP_IMAGE_SQUARE_SIZE).resized(objectTip.w, objectTip.h);
+            if (objectTip.quadDetection.p0.x == 0.0) {
+                tip.draw(mapPos.x, mapPos.y);
+            }
+        }
         // チップを描画する
         //objectMapTip.triDetection.movedBy(-screenOriginPosition).draw(ColorF(0.5, 0.5, 0.5, 0.5));
-        if (objectTip.quadDetection.p0.x == 0.0) {
-            tip.draw(mapPos.x, mapPos.y);
-        }
         //objectMapTip.quadDetection.movedBy(-screenOriginPosition)(tip).draw();
         objectTip.quadDetection.movedBy(-screenOriginPosition).draw(ColorF(0.5, 0.5, 0.5, 0.5));
-        objectTip.detection.movedBy(-screenOriginPosition).draw(ColorF(0.5, 0.5, 0.5, 0.5));
+        objectTip.collision.movedBy(-screenOriginPosition).draw(ColorF(0.5, 0.5, 0.5, 0.5));
     }
+    this->getAllCoin = coinCount == 0;
 }
 
 Point MapCreator::CreateTipPoint(int imageNumber)

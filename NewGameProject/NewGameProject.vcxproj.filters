@@ -147,12 +147,6 @@
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectCollisionDetection.cpp">
-      <Filter>Source Files\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="MapCollisionDetection.cpp">
-      <Filter>Source Files\Collision</Filter>
-    </ClCompile>
     <ClCompile Include="MapScreenHelper.cpp">
       <Filter>Source Files\Map</Filter>
     </ClCompile>
@@ -222,11 +216,26 @@
     <ClCompile Include="SpriteImageMetaData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GameOverManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ObjectTip.cpp">
       <Filter>Source Files\Map</Filter>
+    </ClCompile>
+    <ClCompile Include="GameEndManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameEffect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectMetaData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameEffectManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MapCollisionHelper.cpp">
+      <Filter>Source Files\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectCollisionHelper.cpp">
+      <Filter>Source Files\Collision</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -502,12 +511,6 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ObjectCollisionDetection.hpp">
-      <Filter>Header Files\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="MapCollisionDetection.hpp">
-      <Filter>Header Files\Collision</Filter>
-    </ClInclude>
     <ClInclude Include="MapCreator.hpp">
       <Filter>Header Files\Map</Filter>
     </ClInclude>
@@ -595,11 +598,29 @@
     <ClInclude Include="SpriteUtil.hpp">
       <Filter>Header Files\Util</Filter>
     </ClInclude>
-    <ClInclude Include="GameOverManager.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ObjectTip.hpp">
       <Filter>Header Files\Map</Filter>
+    </ClInclude>
+    <ClInclude Include="GameEndManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameEffect.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectProperty.hpp">
+      <Filter>Header Files\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectMetaData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameEffectManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MapCollisionHelper.hpp">
+      <Filter>Header Files\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectCollisionHelper.hpp">
+      <Filter>Header Files\Collision</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

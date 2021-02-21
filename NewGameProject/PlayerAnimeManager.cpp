@@ -23,7 +23,7 @@ void PlayerAnimeManager::Draw(Player& player, TimeManager& _timeManager, Effect 
 
 void PlayerAnimeManager::GrabLadder(Player &player, TimeManager &tManager)
 {
-    if (RadderMode::GRABBED != player.radderMode) {
+    if (RadderMode::GRABBING != player.radderMode) {
         return;
     }
     TextureRegion playerImage = player.allImage(249, PLAYER_GRAB_LADDER_SPRITE_Y,
@@ -65,7 +65,7 @@ void PlayerAnimeManager::Jump(Player& player, TimeManager &timeManager, Effect &
     //    PLAYER_JUMP_SPRITE_SIZE);
     SpriteImageMetaData icData(player.spriteImageMetaDataMap[(int)PlayerAnimeType::JUMP]);
     TextureRegion playerImage = SpriteUtil::ExtractionImage(player.allImage, icData, jumpNumber);
-    DrawPlayerAfterImage(player, playerImage, timeManager, effect);
+    //DrawPlayerAfterImage(player, playerImage, timeManager, effect);
     DrawPlayerImage(player, playerImage, IMAGE_JUMP_LEFT_POS, IMAGE_JUMP_RIGHT_POS);
     ChangeJumpSprite(player, icData, timeManager);
 }
@@ -84,7 +84,7 @@ void PlayerAnimeManager::Dash(Player& player, TimeManager& timeManager)
 
 void PlayerAnimeManager::Run(Player& player, TimeManager& timeManager)
 {
-    if (DrawFallAnime(player) || !player.walkFlag || player.jumpFlag || player.crouchFlag || BulletMode::NONE != player.bulletMode || RadderMode::GRABBED == player.radderMode) {
+    if (DrawFallAnime(player) || !player.walkFlag || player.jumpFlag || player.crouchFlag || BulletMode::NONE != player.bulletMode || RadderMode::GRABBING == player.radderMode) {
         return;
     }
 
@@ -99,7 +99,7 @@ void PlayerAnimeManager::Stand(Player& player, TimeManager& timeManager)
 {
     if (DrawFallAnime(player) || player.walkFlag || player.jumpFlag
             || player.dashFlag || player.crouchFlag || BulletMode::NONE != player.bulletMode
-            || player.radderMode == RadderMode::GRABBED
+            || player.radderMode == RadderMode::GRABBING
             || player.actionState != CharaActionState::WAIT) {
         return;
     }

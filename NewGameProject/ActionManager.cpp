@@ -6,10 +6,23 @@ PlayerManager::PlayerManager()
 
 void PlayerManager::Action(Player &player, TimeManager &timeManager, Array<MapTip>& mapTips)
 {
-    player.font(U"AttackNumber:", player.attack1Number).draw(280, 10);
     if (player.waitFlag || !player.isExists) {
         return;
     }
+    if (RadderMode::GRABBING == player.radderMode) {
+        if (KeyW.pressed()) {
+            player.MoveY(-player.delta / 2);
+        }
+        else if (KeyS.pressed()) {
+            player.MoveY(player.delta / 2);
+        }
+        else if (KeySpace.down()) {
+            player.radderMode = RadderMode::RELEASE;
+        }
+        player.ground = player.pos.y;
+        return;
+    }
+
     Init(player);
     player.KnockBack();
     Walk(player, timeManager);
@@ -28,6 +41,9 @@ void PlayerManager::Init(Player &player)
 {
     player.walkFlag = false;
     player.beforePos = Vec2(player.pos.x, player.pos.y);
+    if (RadderMode::RELEASE == player.radderMode) {
+        player.radderMode = RadderMode::NONE;
+    }
 }
 
 void PlayerManager::Walk(Player& player, TimeManager& timeManager)
@@ -72,7 +88,9 @@ void PlayerManager::Jump2(Player& player, TimeManager& timeManager, Array<MapTip
     if (!player.jumpFlag) {
         return;
     }
-    if (player.shortJumpYList.isEmpty()) {
+    if (CharaFallMode::BROW_UP_A == player.charaFallMode) {
+        JumpOnTrampoline(player, timeManager);
+    } else if (player.shortJumpYList.isEmpty()) {
         JumpMaxHeight(player, timeManager);
     }
     else {
@@ -132,8 +150,8 @@ void PlayerManager::Dash2(Player& player, TimeManager& timeManager)
 /// <param name="player"></param>
 /// <param name="timeManager"></param>
 void PlayerManager::Landing(Player &player, TimeManager &timeManager) {
-    if (player.jumpMode == JumpMode::FALL && !player.naturalFallFlag) {
-        player.ReplaceY(player.groundY);
+    if (player.jumpMode == JumpMode::FALL && CharaFallMode::NONE == player.charaFallMode) {
+        player.ReplaceY(player.ground);
         player.time = 0.0;
         player.shortJumpIndex = 0;
         player.jumpFlameCount = 0;
@@ -254,16 +272,30 @@ void PlayerManager::ForcedFall(Player& player, TimeManager& timeManager)
 /// <summary>
 /// 最高点までジャンプした時の落下処理です
 /// </summary>
-/// <param name="player"></param>
-/// <param name="timeManager"></param>
+/// <param name="player">プレーヤークラス</param>
+/// <param name="timeManager">時間管理クラス</param>
 void PlayerManager::JumpMaxHeight(Player& player, TimeManager& timeManager)
 {
     //: player.pos.y = CalcHelper::CalcJumpY(player, timeManager);
     player.ReplaceY(JumpMode::FALL == player.jumpMode && player.jumpFallFlag
         ? player.pos.y + FALL_AMT
         : CalcHelper::CalcJumpY(player, timeManager));
-    if (player.pos.y <= (player.groundY - PLAYER_JUMP_HEIGHT) + 1) {
+    if (player.pos.y <= (player.ground - player.jumpHeight) + 1) {
         player.jumpMode = JumpMode::FALL;
+    }
+}
+
+/// <summary>
+/// トランポリン風のジャンプを行う
+/// </summary>
+/// <param name="player">プレーヤークラス</param>
+/// <param name="timeManager">時間管理クラス</param>
+void PlayerManager::JumpOnTrampoline(Player& player, TimeManager& timeManager)
+{
+    player.ReplaceY(CalcHelper::CalcJumpOnTrampoline(player, timeManager));
+    if (player.pos.y <= (player.ground - (player.jumpHeight * 2)) + 1) {
+        player.jumpMode = JumpMode::FALL;
+        player.charaFallMode = CharaFallMode::NATURAL_FALL;
     }
 }
 
@@ -346,7 +378,7 @@ void PlayerManager::RightwardDash(Player& player, TimeManager& timeManager)
     if (!player.rightwardFlag) {
         return;
     }
-    if (!player.rightWallFlag && player.pos.x <= player.tempXBeforDash + DASH_DIST) {
+    if (player.wallTipTouching != MapTipTouching::RIGHT && player.pos.x <= player.tempXBeforDash + DASH_DIST) {
         FixedDash(player, timeManager, player.rightwardFlag);
     }
     else {
@@ -359,10 +391,10 @@ void PlayerManager::LeftwardDash(Player& player, TimeManager& timeManager)
     if (player.rightwardFlag) {
         return;
     }
-    if (!player.leftWallFlag && player.pos.x >= player.tempXBeforDash - DASH_DIST) {
+    if (player.wallTipTouching != MapTipTouching::LEFT && player.pos.x >= player.tempXBeforDash - DASH_DIST) {
         if (!player.jumpFlag) {
             player.ReplaceY(
-                player.groundY - (1.0 - pow(1.0 - sin(DASH_PI * timeManager.dashTime), DASH_DISTORTION)) * DASH_HEIGHT);
+                player.ground - (1.0 - pow(1.0 - sin(DASH_PI * timeManager.dashTime), DASH_DISTORTION)) * DASH_HEIGHT);
         }
         player.MoveX(-(!player.jumpFlag ? player.delta * 2 : player.delta * 4));
         timeManager.dashTime += 0.1;
@@ -376,7 +408,7 @@ void PlayerManager::ClearDash(Player& player, TimeManager& timeManager)
 {
     player.tempXBeforDash = 0.0;
     player.dashFlag = false;
-    player.ReplaceY(player.groundY);
+    player.ReplaceY(player.ground);
     player.afterDashFlag = true;
     timeManager.dashTime = 0.0;
 }
@@ -385,7 +417,7 @@ void PlayerManager::FixedDash(Player& player, TimeManager& timeManager, bool rig
 {
     if (!player.jumpFlag) {
         player.ReplaceY(
-            player.groundY - (1.0 - pow(1.0 - sin(DASH_PI * timeManager.dashTime), DASH_DISTORTION)) * DASH_HEIGHT);
+            player.ground - (1.0 - pow(1.0 - sin(DASH_PI * timeManager.dashTime), DASH_DISTORTION)) * DASH_HEIGHT);
     }
     int multiplicand = !player.jumpFlag ? 2 : 4;
     player.MoveX(rightwardFlag
@@ -396,7 +428,7 @@ void PlayerManager::FixedDash(Player& player, TimeManager& timeManager, bool rig
 
 void PlayerManager::Fall(Player& player, TimeManager& timeManager)
 {
-    if (player.naturalFallFlag && !player.jumpFlag && !player.dashFlag) {
+    if (CharaFallMode::NATURAL_FALL == player.charaFallMode && !player.jumpFlag && !player.dashFlag) {
 
         if (!player.rightwardFlag && player.isSlope) {
             return;

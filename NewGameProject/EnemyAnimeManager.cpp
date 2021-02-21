@@ -14,31 +14,27 @@ void EnemyAnimeManager::Draw(Array<Enemy> &enemies, Player player, Font font)
         AnimationBean aniBean = AnimationBean::InitAnimationBean(enemy, imageMetaData);
         Vec2 screenOriginPosition2(MapScreenHelper::ChangeWorldToScreenPos(enemy.pos));
         Vec2 enemyPos = MapScreenHelper::FixPositionFromPlayerPos(player.pos, enemy.pos.movedBy(0, -screenOriginPosition2.y));
-        if (imageMetaData.vecs.size() <= enemy.imageNumber)
-        {
-            throw Error(U"エラー:SpriteUtil.cpp ExtractionImage vecs");
-        }
-        if (imageMetaData.sizes.size() <= enemy.imageNumber)
-        {
-            throw Error(U"エラー:SpriteUtil.cpp ExtractionImage sizes");
-        }
-        SpriteUtil::ExtractionImage(enemy.allImage, imageMetaData, enemy.imageNumber)
+        
+        _ASSERT_EXPR(imageMetaData.vecs.size() > aniBean.imageNumber, U"エラー:SpriteUtil.cpp ExtractionImage vecs");
+        _ASSERT_EXPR(imageMetaData.sizes.size() > aniBean.imageNumber, U"エラー:SpriteUtil.cpp ExtractionImage vecs");
+        SpriteUtil::ExtractionImage(enemy.allImage, imageMetaData, aniBean.imageNumber)
             .mirrored(!enemy.rightwardFlag)
             .drawAt(enemyPos, ColorF(1.0, 1.0, 1.0, GetFlashPeriodic(enemy)));
         font(enemy.hp).draw(enemyPos.movedBy(0, -20));
-        
         enemy.imageNumber = Animate(aniBean, enemy.sw);
-        if (enemy.imageNumber == 4) {
-            int a = 0;
-        }
+        font(enemy.imageNumber).draw(enemyPos.movedBy(0, -40));
     }
 }
 
 double EnemyAnimeManager::GetFlashPeriodic(Enemy enemy) {
-    return enemy.actionState == CharaActionState::ON_DAMAGE || enemy.actionState == CharaActionState::DOWN
-        ? Periodic::Square0_1(0.1s)
-        : 1.0;
+    if (enemy.isOnDamage || enemy.actionState == CharaActionState::ON_DAMAGE || enemy.actionState == CharaActionState::DOWN) {
+        return Periodic::Square0_1(0.1s);
+    }
+    else {
+        return 1.0;
+    }
 }
+
 int EnemyAnimeManager::Animate(AnimationBean &aniBean, Stopwatch &_sw)
 {
     int &imageNumber = aniBean.imageNumber;

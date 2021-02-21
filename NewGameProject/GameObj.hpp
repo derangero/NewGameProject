@@ -9,6 +9,7 @@
 
 class GameObj {
 public:
+	bool keyAppearance;
 	Player player;
 	Texture warpBulletImage;
 	Texture bulletImage;
@@ -21,6 +22,7 @@ public:
 	void DisplayAnimeTypeForDebug(Vec2 displayPos);
 	void Init(Player& player);
 	void CreateEnemies();
+	ArmorClass ConvertArmorClassNameToEnum(String armorClass);
 	Texture SelectEnemyImage(Enemy& enemy, double w, double h, Texture eye, Texture hamburg, Texture gob, Texture skull);
 	void BulletAction(Player& _player, GameObj& gameObj, TimeManager& timeMngr);
 };

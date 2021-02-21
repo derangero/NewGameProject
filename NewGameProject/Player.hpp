@@ -10,8 +10,10 @@
 class Player : public Character
 {
 public:
-	/* 当たり判定 */
-	RectF detection;
+	/* ゲームクリアのフラグ */
+	bool gameFinished;
+	/* 取得したコイン */
+	int coinCount;
 	/* ジャンプ時のフレームをカウントするための変数 */
 	int jumpFlameCount;
 	/* 動作系フラグ */
@@ -19,16 +21,6 @@ public:
 	bool crouchFlag;
 	bool jumpFlag;
 	bool dashFlag;
-	/* ジャンプ落下フラグ */
-	bool jumpFallFlag;
-	/* 自由落下フラグ */
-	bool naturalFallFlag;
-	/* ジャンプ後フラグ */
-	bool afterDashFlag;
-	bool leftWallFlag;
-	bool rightWallFlag;
-	bool topWallFlag;
-	bool topWallFlag2;
 	/* 待機フラグ(コマンドをうけつけない) */
 	bool waitFlag;
 	/** 待機用のカウント*/
@@ -39,8 +31,6 @@ public:
 	int attack1Number;
 	/* アニメーション番号管理用の動的配列 */
 	Array<int> attackNumbers;
-	/* ジャンプモード */
-	JumpMode jumpMode;
 	/* 短いジャンプ時の位置配列管理用のインデックス */
 	int shortJumpIndex;
 	double rememberYForSlope;
@@ -54,10 +44,10 @@ public:
 	BulletMode bulletMode;
 	/** 射撃しているバレット名 */
 	BulletName bulletName;
-	Array<MapObjectType> touchedLeftObjects;
-	Array<MapObjectType> touchedRightObjects;
-	Array<MapObjectType> touchedTopObjects;
-	Array<MapObjectType> touchedBottomObjects;
+	Array<MapType> touchedLeftObjects;
+	Array<MapType> touchedRightObjects;
+	Array<MapType> touchedTopObjects;
+	Array<MapType> touchedBottomObjects;
 	/* ジャンプボタンを途中で話した時の座標管理リスト */
 	Array<double> shortJumpYList;
 public:
@@ -76,6 +66,7 @@ public:
 	void ReplacePos(Vec2 replacePos);
 	Vec2 GetDetectionPos(HitBoxDetection detection);
 	Vec2 GetFootPos();
-	bool isFallOff();
+	bool IsFallOff();
+	bool GetCoin(MapTip &mapTip);
 	void Debug(Font font);
 };

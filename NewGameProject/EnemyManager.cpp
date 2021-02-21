@@ -9,15 +9,15 @@ void EnemyManager::Action(GameObj& gameObj, Player &player)
 }
 
 // EnemyAnimeManager &eaManager 参照をとると、enemiesが値渡しになる？
-void EnemyManager::Draw(EnemyAnimeManager &eaManager, GameObj& gameObj, Player player)
+void EnemyManager::Draw(EnemyAnimeManager &enemyAnimeManager, GameObj& gameObj, Player player)
 {
-    eaManager.Draw(gameObj.enemies, player, gameObj.smallFont);
+    enemyAnimeManager.Draw(gameObj.enemies, player, gameObj.smallFont);
 }
 
 void EnemyManager::CollideToPlayer(Player &player, Enemy &enemy)
 {
-    if (enemy.hitBox.intersects(player.detection)) {
-        bool isRightHit = IsHitRight(enemy.hitBox.x, player.detection.center().x);
+    if (enemy.hitBox.intersects(player.hitBox)) {
+        bool isRightHit = IsHitRight(enemy.hitBox.x, player.hitBox.center().x);
         player.OnDamage(ENEMY_HITBOX_DAMAGE, isRightHit);
     }
 }

@@ -29,6 +29,22 @@ Vec2 MapScreenHelper::GetScreenOriginPosition(Vec2 pos) {
     return screenOriginPosition;
 };
 
+Vec2 MapScreenHelper::GetEnemyScreenOriginPos(Vec2 enemyPos, Vec2 enemyOriginPos, Vec2 playerPos) {
+    double movedX = IsMoveEnemyCameraX(enemyPos.x, enemyOriginPos.x)
+            ? enemyOriginPos.x - enemyPos.x
+            : 0;
+    double movedY = IsMoveEnemyCameraY(enemyPos.y, enemyOriginPos.y)
+            ? enemyOriginPos.y - enemyPos.y
+            : 0;
+    double playerMovedX = IsMoveCameraX(playerPos.x) ? PLAYER_STAND_POS.x - playerPos.x : 0;
+    double playerMovedY = IsMoveCameraY(playerPos.y) ? PLAYER_STAND_POS.y - playerPos.y : 0;
+    Vec2 screenOriginPosition(
+        (CAMERA_POS.x - Scene::Width() / 2.0) - movedX - playerMovedX,
+        (CAMERA_POS.y - Scene::Height() / 2.0) - movedY - playerMovedY);
+
+    return screenOriginPosition;
+};
+
 Vec2 MapScreenHelper::MoveMapObject(Vec2 pos, Array<ObjectTip>& mapTips)
 {
     Vec2 screenOriginPosition = GetScreenOriginPosition(pos);
@@ -68,5 +84,19 @@ bool MapScreenHelper::IsMoveCameraY(double playerY)
 {
     // TODO: yにキャラの高さを考慮する必要あるかも
     return  0 > playerY;
+    //return  -(CAMERA_POS.y - Scene::Height() / 2.0) < playerY;
+};
+
+bool MapScreenHelper::IsMoveEnemyCameraX(double enemyX, double originX)
+{
+    bool isLeftMoveCameraX = originX <= enemyX;
+    bool isRightMoveCameraX = MAX_SCREEN_SIZE.x - CAMERA_POS.x >= enemyX;
+    return isLeftMoveCameraX && isRightMoveCameraX;
+};
+
+bool MapScreenHelper::IsMoveEnemyCameraY(double enemyY, double originX)
+{
+    // TODO: yにキャラの高さを考慮する必要あるかも
+    return  0 > enemyY;
     //return  -(CAMERA_POS.y - Scene::Height() / 2.0) < playerY;
 };

@@ -11,4 +11,5 @@ public:
 	// ジャンプ時のY軸を計算します。
 	static double CalcJumpY(Player player, TimeManager timeManager);
 	static double CalcJumpY(Player player, TimeManager timeManager, double& newTime);
+	static double CalcJumpOnTrampoline(Player player, TimeManager timeManager);
 };

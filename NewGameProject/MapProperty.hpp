@@ -2,7 +2,8 @@
 # include <Siv3D.hpp>
 
 static Array<String> MAP_OBJECT_NAMES = {
-	U"ladder_1", U"grass", U"slope"
+	U"ladder_1", U"grass", U"slope", U"pieceObject", U"airBrowUp", U"moveFloor", U"damageFloor",
+	U"enemyWait"
 };
 static Array<String> ENEMY_NAMES = {
 	U"enemiesA"

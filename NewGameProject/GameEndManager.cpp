@@ -1,19 +1,27 @@
-#include "GameOverManager.hpp"
+#include "GameEndManager.hpp"
 
-GameOverManager::GameOverManager() :
+GameEndManager::GameEndManager() :
     bGroundChangeTime(0.0),
     gameOverTime(0.0),
     gameOverTitleFont(Font(60, U"font/yurumoji.ttf")),
     gameOverMiddleFont(Font(40, U"font/yurumoji.ttf")),
+    gameClearStr(U"GAME_CLEAR!"),
     gameOverStr(U"GAME_OVER..."),
     continueStr(U"CONTINUE"),
     titleStr(U"TITLE")
 {}
 
-void GameOverManager::DrawScene(Player &player, PlayerAnimeManager &playerAnimeManager, TimeManager &timeManager,
+void GameEndManager::DrawScene(Player & player, PlayerAnimeManager & playerAnimeManager, TimeManager & timeManager, Effect & effect,
+    GameEffectManager &effectManager)
+{
+    DrawMissScene(player, playerAnimeManager, timeManager, effect);
+    DrawFinishScene(player, playerAnimeManager, timeManager, effect, effectManager);
+}
+
+void GameEndManager::DrawMissScene(Player &player, PlayerAnimeManager &playerAnimeManager, TimeManager &timeManager,
     Effect &effect)
 {
-    if (player.isExists && !player.isFallOff()) {
+    if ((player.isExists && !player.IsFallOff()) || player.gameFinished) {
         return;
     }
     bGroundChangeTime += Scene::DeltaTime() * 0.5;
@@ -34,4 +42,17 @@ void GameOverManager::DrawScene(Player &player, PlayerAnimeManager &playerAnimeM
             }
         }
     }
+}
+
+void GameEndManager::DrawFinishScene(Player& player, PlayerAnimeManager& playerAnimeManager, TimeManager& timeManager, Effect& effect,
+    GameEffectManager &effectManager)
+{
+    if (!player.gameFinished) {
+        return;
+    }
+    Point pt = Scene::Center().movedBy(-150, -100);
+    gameOverTitleFont(gameClearStr).draw(pt, Palette::Black);
+    effectManager.DrawStart();
+    player.Init(gameOverTitleFont);
+    player.waitFlag = true;
 }

@@ -23,14 +23,15 @@ void BulletManager::ControlWarpBullet(Array<Bullet>& bullets, Player& player, Ar
 				bullet.bulletSw.restart();
 			}
 			LerpForBulletEndPos(bullet, player);
+			bullet.hitBox = RectF();
 		}
 		else {
 			if (BulletMode::WARP == player.bulletMode && !bullet.isExists) {
 				bullet.isExists = true;
 			}
 			if (bullet.isExists) {
-				bullet.Update(player.pos, player.detection);
-				bullet.Draw(player.pos, player.detection);
+				bullet.Update(player.pos, player.hitBox);
+				bullet.Draw(player.pos, player.hitBox);
 				String bulletName = U"NONE";
 				if (player.bulletMode == BulletMode::WARP) {
 					bulletName = U"WARP";
@@ -77,8 +78,8 @@ void BulletManager::ControlBullet(Array<Bullet>& bullets, Player& player, Array<
 				bullet.isHit = false;
 				return;
 			}
-			bullet.Update(player.pos, player.detection);
-			bullet.Draw(player.pos, player.detection, bullet.bulletName, player.allImage,
+			bullet.Update(player.pos, player.hitBox);
+			bullet.Draw(player.pos, player.hitBox, bullet.bulletName, player.allImage,
 				player.spriteImageMetaDataMap, timeMngr);
 
 			if (IsOutRange(bullet)) {
@@ -123,18 +124,17 @@ void BulletManager::BulletHit(Player& player, Array<Enemy>& enemies, Array<Bulle
 		if (playerBullet.owner != U"player") {
 			continue;
 		}
-		//TODO:デバッグ用
+		#ifdef _DEBUG
 		if (playerBullet.isExists) {
-			playerBullet.hitBox.draw(Palette::White);
+			playerBullet.hitBox.draw(ColorF(1.0, 1.0, 1.0, 0.5));
 		}
-
+		#endif _DEBUG
 		for (Enemy& enemy : enemies) {
-			if (enemy.hitBox.intersects(playerBullet.hitBox) && !enemy.isInvisible && playerBullet.isExists) {
+			//TODO: !enemy.isInvisible こんな処理も考慮できる
+			if (enemy.hitBox.intersects(playerBullet.hitBox) && playerBullet.isExists) {
 				enemy.OnDamage(playerBullet.damage, false);
-				font(playerBullet.damage).draw(enemy.playerPos.movedBy(0, -60));
 				player.isAttack1 = true;
 				playerBullet.isExists = false;
-				//timeMngr.bulletAttack1Cool.reset();
 			}
 		}
 	}
@@ -142,8 +142,8 @@ void BulletManager::BulletHit(Player& player, Array<Enemy>& enemies, Array<Bulle
 		if (enemyBullet.owner == U"player") {
 			continue;
 		}
-		if (enemyBullet.hitBox.intersects(player.detection)) {
-			bool isRightHit = IsHitRight(enemyBullet.hitBox.center().x, player.detection.center().x);
+		if (enemyBullet.hitBox.intersects(player.hitBox)) {
+			bool isRightHit = IsHitRight(enemyBullet.hitBox.center().x, player.hitBox.center().x);
 			player.OnDamage(enemyBullet.damage, isRightHit);
 		}
 	}
@@ -175,7 +175,7 @@ void BulletManager::LerpForBulletEndPos(Bullet& bullet, Player& player) {
 	player.pos = player.pos.lerp(Vec2(bullet.endPos.x, bullet.endPos.y), EaseOutQuint(t));
 	if (IsDistination(bullet, player) || t >= 0.3) { // 0.3は滞在時間をカットしたいので。イージングの種類で変わる。
   		player.pos = bullet.endPos;
-		player.groundY = bullet.endPos.y;
+		player.ground = bullet.endPos.y;
 		player.waitFlag = false;
 		player.time = 0.0; // 落下後の初期化処理
 		bullet.isHit = false;
@@ -215,8 +215,8 @@ bool BulletManager::IsCollisionDetected(Bullet& bullet, Player& player, Array<Ma
 		return false;
 	}
 	Vec2 screenOriginPosition(MapScreenHelper::ChangeWorldToScreenPos(player.pos));
-	for (auto i : step(mapTips.size())) {
-		RectF map(mapTips[i].detection);
+	for (auto mapTip : mapTips) {
+		RectF map(mapTip.collision);
 		map = map.movedBy(-screenOriginPosition);
 		if (bullet.hitBox.intersects(map)) {
 			bullet.endPos = Vec2(bullet.pos.x, bullet.pos.y);

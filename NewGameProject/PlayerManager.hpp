@@ -27,6 +27,7 @@ public:
     void ShootBullet(Player& player, TimeManager& timeManager);
     void ForcedFall(Player& player, TimeManager& timeManager);
     void JumpMaxHeight(Player& player, TimeManager& timeManager);
+    void JumpOnTrampoline(Player& player, TimeManager& timeManager);
     void JumpShortHeight(Player& player, TimeManager& timeManager);
     void ShootAttackBallet1(Player& player, TimeManager& timeManager);
     void ShootAttackBallet2(Player& player, TimeManager& timeManager);

@@ -79,7 +79,11 @@ GameObj::GameObj(MapCreator& mapCreator, std::unordered_map<int, SpriteImageMeta
 void GameObj::DisplayAnimeTypeForDebug(Vec2 displayPos)
 {
 	for (Enemy enemy : enemies) {
-		if (enemy.name == U"gob") {
+		if (enemy.name == U"hamburg") {
+			int charaType = static_cast<int>(enemy.charaType);
+			font(Format(enemy.name, U"_type: ", charaType)).draw(displayPos.movedBy(-100, 90));
+		}
+		if (enemy.name == U"skull") {
 			String animeType = U"";
 			if (enemy.animeType == EnemyAnimeType::NONE) {
 				animeType = U"NONE";
@@ -102,12 +106,53 @@ void GameObj::DisplayAnimeTypeForDebug(Vec2 displayPos)
 			else if (enemy.animeType == EnemyAnimeType::ATTACK2) {
 				animeType = U"ATTACK2";
 			}
-			font(Format(enemy.name, U"AnimeType: ", animeType)).draw(displayPos);
+			String actionType = U"";
+			if (enemy.actionState == CharaActionState::WAIT) {
+				actionType = U"WAIT";
+			}
+			else if (enemy.actionState == CharaActionState::ATTACK) {
+				actionType = U"ATTACK";
+			}
+			else if (enemy.actionState == CharaActionState::CHASE) {
+				actionType = U"CHASE";
+			}
+			else if (enemy.actionState == CharaActionState::DOWN) {
+				actionType = U"DOWN";
+			}
+			else if (enemy.actionState == CharaActionState::MOVE) {
+				actionType = U"MOVE";
+			}
+			else if (enemy.actionState == CharaActionState::ON_DAMAGE) {
+				actionType = U"ON_DAMAGE";
+			}
+			else if (enemy.actionState == CharaActionState::ON_DAMAGE_INVISIBLE) {
+				actionType = U"ON_DAMAGE_INVISIBLE";
+			}
+			String attackState = U"";
+			if (enemy.attackState == CharaAttackState::CHASE_ATTACK_A) {
+				attackState = U"CHASE_ATTACK_A";
+			}
+			else if (enemy.attackState == CharaAttackState::NONE) {
+				attackState = U"NONE";
+			}
+			else if (enemy.attackState == CharaAttackState::ATTACK_A) {
+				actionType = U"ATTACK_A";
+			}
+			else if (enemy.attackState == CharaAttackState::ATTACK_B) {
+				actionType = U"ATTACK_B";
+			}
+			font(Format(enemy.name, U"_ActionType: ", actionType)).draw(displayPos.movedBy(-100, 30));
+			font(Format(enemy.name, U"_AnimeType: ", animeType)).draw(displayPos.movedBy(-100, 50));
+			font(Format(enemy.name, U"_AttackState: ", attackState)).draw(displayPos.movedBy(-100, 10));
+			font(Format(enemy.name, U"_IsExists: ", enemy.isExists)).draw(displayPos.movedBy(-100, 70));
+			if (!enemy.isExists) {
+				int a = 0;
+			}
 		}
 	}
 }
 
-void GameObj::Init(Player& player)
+void GameObj::Init(Player &player)
 {
 	this->player = player;
 	for (Bullet &bullet : bullets) {
@@ -117,20 +162,29 @@ void GameObj::Init(Player& player)
 		}
 	}
 	player.Init(font);
-	Enemy::InitEnemies(enemies, player.pos, player.detection, font);
+	Enemy::InitEnemies(enemies, player.pos, player.hitBox, font);
 	this->font = font;
 	if (player.crouchFlag) {
 		player.UpdateDetection(0, -PLAYER_FIXED_CROUCH_H, PLAYER_DETEC_W, PLAYER_CROUCH_DETEC_H);
+	}
+	// åÆÇÃèoåªîªíË
+	bool isExists = false;
+	if (mapCreator.getAllCoin) {
+		for (Enemy enemy : enemies) {
+			if (enemy.isExists) {
+				isExists = true;
+			}
+		}
+		if (!isExists) {
+			mapCreator.keyAppearance = true;
+		}
 	}
 }
 
 void GameObj::CreateEnemies()
 {
 	const XMLReader xml(MAP_XML_PATH);
-	if (!xml)
-	{
-		throw Error(U"Failed to load `myGameTestMap.xml`");
-	}
+	_ASSERT_EXPR(xml, L"Failed to load myGameTestMap.xml");
 	Array<Enemy> enemies;
 	Texture eye(U"image/enemy/eye.png");
 	Texture hamburg(U"image/enemy/hamburg.png");
@@ -154,7 +208,7 @@ void GameObj::CreateEnemies()
 			enemy.name = name;
 			enemy.type = Parse<int>(type);
 			enemy.allImage = SelectEnemyImage(enemy, w, h, eye, hamburg, gob, skull);
-			enemy.pos = Vec2(x, y - 16);
+			enemy.pos = enemy.originPos = Vec2(x, y - 16);
 			String jsonURI = U"ini/";
 			JSONReader imageJson(jsonURI.append(enemy.name).append(U".json"));
 			enemy.spriteImageMetaDataMap = SpriteUtil::GetEnemySpriteImageMetaDataMap(imageJson);
@@ -184,9 +238,18 @@ void GameObj::CreateEnemies()
 					else if (elem4.attribute(U"name").value() == U"chaseVelocity") {
 						enemy.chaseVelocity = Parse<double>(elem4.attribute(U"value").value());
 					}
+					else if (elem4.attribute(U"name").value() == U"randomJumpChance") {
+						double randomJumpChance = Parse<double>(elem4.attribute(U"value").value());
+						// ê›íËílÇÕêÆêîÇëzíË(10 / 100 = 0.1 = 10%)
+						enemy.randomJumpChance = randomJumpChance / 100;
+					}
 					else if (elem4.attribute(U"name").value() == U"animeType") {
 						animeType = Parse<int>(elem4.attribute(U"value").value());
 						enemy.animeType = static_cast<EnemyAnimeType>(animeType);
+					}
+					else if (elem4.attribute(U"name").value() == U"armorClass") {
+						String armorClass = elem4.attribute(U"value").value();
+						enemy.armorClass = ConvertArmorClassNameToEnum(armorClass);
 					}
 					else if (elem4.attribute(U"name").value() == U"actionState") {
 						int actionState = Parse<int>(elem4.attribute(U"value").value());
@@ -220,6 +283,16 @@ void GameObj::CreateEnemies()
 		}
 	}
 	this->enemies = enemies;
+};
+
+ArmorClass GameObj::ConvertArmorClassNameToEnum(String armorClass)
+{
+	if (U"SUPER" == armorClass) {
+		return ArmorClass::SUPER;
+	} else if (U"HYPER" == armorClass) {
+		return ArmorClass::HYPER;
+	}
+	return ArmorClass::NORMAL;
 };
 
 Texture GameObj::SelectEnemyImage(Enemy &enemy, double w, double h, Texture eye, Texture hamburg, Texture gob, Texture skull)
